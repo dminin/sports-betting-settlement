@@ -54,7 +54,8 @@ class EventOutcomeControllerTest {
                         .content("""
                                 {"eventId":"EVT-1","eventName":"A vs B"}"""))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errors.eventWinnerId").exists());
 
         verify(publishEventOutcomeUseCase, never()).publish(any());
     }

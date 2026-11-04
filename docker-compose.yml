@@ -67,7 +67,7 @@ services:
       - sh
       - -c
       - |
-        until sh mqadmin clusterList -n rmqnamesrv:9876 | grep -q DefaultCluster; do
+        until sh mqadmin clusterList -n rmqnamesrv:9876 2>&1 | grep -q DefaultCluster; do
           echo "waiting for broker registration..."; sleep 2;
         done
         sh mqadmin updatetopic -n rmqnamesrv:9876 -c DefaultCluster -t bet-settlements -a +message.type=NORMAL

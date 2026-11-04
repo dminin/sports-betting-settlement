@@ -102,6 +102,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- RocketMQ's shaded Netty still uses sun.misc.Unsafe, which JDK 24+ warns about -->
+                    <jvmArguments>--sun-misc-unsafe-memory-access=allow</jvmArguments>
+                </configuration>
             </plugin>
         </plugins>
     </build>
