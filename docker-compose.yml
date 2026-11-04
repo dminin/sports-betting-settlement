@@ -1,0 +1,73 @@
+name: bet-settlement
+
+services:
+  kafka:
+    image: apache/kafka:4.2.2
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_HOST://localhost:9092,PLAINTEXT://kafka:19092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_SHARE_COORDINATOR_STATE_TOPIC_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  rmqnamesrv:
+    image: apache/rocketmq:5.5.0
+    container_name: rmqnamesrv
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    command: sh mqnamesrv
+
+  rmqbroker:
+    image: apache/rocketmq:5.5.0
+    container_name: rmqbroker
+    depends_on:
+      - rmqnamesrv
+    environment:
+      NAMESRV_ADDR: rmqnamesrv:9876
+      JAVA_OPT_EXT: "-Xms512m -Xmx512m -Xmn256m"
+    command: sh mqbroker
+
+  rmqproxy:
+    image: apache/rocketmq:5.5.0
+    container_name: rmqproxy
+    depends_on:
+      - rmqbroker
+    ports:
+      - "8081:8081"
+    restart: on-failure
+    environment:
+      NAMESRV_ADDR: rmqnamesrv:9876
+      JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
+    command: sh mqproxy
+
+  # One-shot job: the gRPC client cannot auto-create topics through the proxy.
+  rocketmq-init:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-init
+    depends_on:
+      - rmqbroker
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - |
+        until sh mqadmin clusterList -n rmqnamesrv:9876 | grep -q DefaultCluster; do
+          echo "waiting for broker registration..."; sleep 2;
+        done
+        sh mqadmin updatetopic -n rmqnamesrv:9876 -c DefaultCluster -t bet-settlements -a +message.type=NORMAL
