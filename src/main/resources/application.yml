@@ -31,7 +31,7 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
-        spring.json.value.default.type: com.sporty.settlement.adapter.messaging.EventOutcomeMessage
+        spring.json.value.default.type: com.sporty.settlement.messaging.dto.EventOutcomeMessage
         spring.json.use.type.headers: false
 
 app:

@@ -5,9 +5,9 @@ import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.sporty.settlement.application.port.in.BetQueryUseCase;
 import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.domain.BetStatus;
+import com.sporty.settlement.service.BetService;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +42,7 @@ class BetSettlementFlowTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private BetQueryUseCase betQueryUseCase;
+    private BetService betService;
 
     @Test
     void publishedOutcomeSettlesPendingBetsOfTheEvent() throws Exception {
@@ -57,12 +57,12 @@ class BetSettlementFlowTest {
                 .andExpect(status().isAccepted());
 
         await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
-            Map<String, Bet> betsByUser = byUser(betQueryUseCase.find("EVT-IT-1", null));
+            Map<String, Bet> betsByUser = byUser(betService.find("EVT-IT-1", null));
             assertThat(betsByUser.get("user-a").status()).isEqualTo(BetStatus.WON);
             assertThat(betsByUser.get("user-b").status()).isEqualTo(BetStatus.LOST);
             assertThat(betsByUser.values()).allSatisfy(bet -> assertThat(bet.settledAt()).isNotNull());
         });
-        assertThat(betQueryUseCase.find("EVT-IT-2", null))
+        assertThat(betService.find("EVT-IT-2", null))
                 .singleElement()
                 .extracting(Bet::status)
                 .isEqualTo(BetStatus.PENDING);

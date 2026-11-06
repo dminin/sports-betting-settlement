@@ -1,0 +1,80 @@
+# Manual test of the settlement flow. Runs in the IntelliJ HTTP Client and in the VS Code / Cursor REST Client.
+# Start the app first (see README). Run the requests from top to bottom: the expected results assume
+# a fresh start with the seeded bets.
+
+@host = http://localhost:8080
+
+### 1. Pending bets of EVT-1001 (bets 1 and 3 picked TEAM-RMA, bet 2 picked TEAM-FCB)
+GET {{host}}/api/bets?eventId=EVT-1001
+
+### 2. One bet
+GET {{host}}/api/bets/1
+
+### 3. Publish the outcome of EVT-1001: Real Madrid wins. Expect 202 Accepted.
+POST {{host}}/api/event-outcomes
+Content-Type: application/json
+
+{
+  "eventId": "EVT-1001",
+  "eventName": "Real Madrid vs Barcelona",
+  "eventWinnerId": "TEAM-RMA"
+}
+
+### 4. Bets of EVT-1001 after settlement: bets 1 and 3 WON, bet 2 LOST, each with settledAt
+# Settlement is asynchronous. If the bets are still PENDING, wait a second and run again.
+GET {{host}}/api/bets?eventId=EVT-1001
+
+### 5. Pending bets: only the two bets of EVT-2002 are left (after step 4 shows the settled bets)
+GET {{host}}/api/bets?status=PENDING
+
+### 6. Place a bet on a new event. Expect 201 Created with a Location header.
+POST {{host}}/api/bets
+Content-Type: application/json
+
+{
+  "userId": "user-9",
+  "eventId": "EVT-3003",
+  "eventMarketId": "MKT-MATCH-WINNER",
+  "eventWinnerId": "TEAM-Z",
+  "amount": 12.50
+}
+
+### 7. Publish the outcome of EVT-3003: TEAM-Z wins. Expect 202 Accepted.
+POST {{host}}/api/event-outcomes
+Content-Type: application/json
+
+{
+  "eventId": "EVT-3003",
+  "eventName": "Team Z vs Team Y",
+  "eventWinnerId": "TEAM-Z"
+}
+
+### 8. The new bet is WON. If it is still PENDING, wait a second and run again.
+GET {{host}}/api/bets?eventId=EVT-3003
+
+### 9. Error: outcome without a winner. Expect 400 with errors.eventWinnerId.
+POST {{host}}/api/event-outcomes
+Content-Type: application/json
+
+{
+  "eventId": "EVT-1001",
+  "eventName": "Real Madrid vs Barcelona"
+}
+
+### 10. Error: unknown bet. Expect 404.
+GET {{host}}/api/bets/999
+
+### 11. Error: unknown status value. Expect 400.
+GET {{host}}/api/bets?status=OPEN
+
+### 12. Error: negative amount. Expect 400 with errors.amount.
+POST {{host}}/api/bets
+Content-Type: application/json
+
+{
+  "userId": "user-9",
+  "eventId": "EVT-3003",
+  "eventMarketId": "MKT-MATCH-WINNER",
+  "eventWinnerId": "TEAM-Z",
+  "amount": -5
+}

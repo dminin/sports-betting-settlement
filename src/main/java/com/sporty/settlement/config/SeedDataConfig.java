@@ -1,7 +1,7 @@
 package com.sporty.settlement.config;
 
-import com.sporty.settlement.application.port.out.BetRepository;
 import com.sporty.settlement.domain.Bet;
+import com.sporty.settlement.persistence.BetRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import org.slf4j.Logger;

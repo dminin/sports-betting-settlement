@@ -8,20 +8,20 @@ A Spring Boot service that simulates event outcome handling and bet settlement:
 4. A RocketMQ consumer settles each bet: **WON** if the bet's `eventWinnerId` equals the outcome's winner, otherwise **LOST**.
 
 ```mermaid
-flowchart LR
+flowchart TD
   client[Client] -->|"POST /api/event-outcomes"| webIn[EventOutcomeController]
-  webIn --> publishUC[PublishEventOutcomeService]
-  publishUC --> kafkaOut[KafkaEventOutcomePublisher]
+  webIn --> publishSvc[PublishEventOutcomeService]
+  publishSvc --> kafkaOut[KafkaEventOutcomePublisher]
   kafkaOut --> kafkaTopic[("Kafka event-outcomes")]
   kafkaTopic --> kafkaIn[EventOutcomeKafkaListener]
-  kafkaIn --> matchUC[MatchBetsService]
-  matchUC --> repo[(H2 bets)]
-  matchUC --> rmqOut[BetSettlementPublisher port]
+  kafkaIn --> matchSvc[MatchBetsService]
+  matchSvc --> repo[(H2 bets)]
+  matchSvc --> rmqOut[BetSettlementPublisher interface]
   rmqOut -->|default| rmqTopic[("RocketMQ bet-settlements")]
-  rmqOut -->|mock profile| settleUC
+  rmqOut -->|mock profile| settleSvc
   rmqTopic --> rmqIn[BetSettlementRocketMqConsumer]
-  rmqIn --> settleUC[SettleBetService]
-  settleUC --> repo
+  rmqIn --> settleSvc[SettleBetService]
+  settleSvc --> repo
 ```
 
 ## Tech stack
@@ -88,6 +88,12 @@ On startup, five pending bets are seeded (disable with `-Dspring-boot.run.argume
 
 ### 3. Try it
 
+Open [`http/bet-settlement.http`](http/bet-settlement.http) in IntelliJ IDEA (HTTP Client) or in VS Code / Cursor
+(REST Client extension) and run the requests from top to bottom. Each request has a comment with the expected result:
+the happy path for the seeded bets, a bet you place yourself, and the error cases.
+
+The main steps with curl:
+
 ```bash
 # Pending bets of event EVT-1001
 curl -s 'localhost:8080/api/bets?eventId=EVT-1001'
@@ -148,24 +154,25 @@ Errors use RFC 9457 problem details; validation errors list the failing fields u
 
 ## Design
 
-Light hexagonal layout under `com.sporty.settlement`:
+Layered layout under `com.sporty.settlement`:
 
 ```
-domain/                  Bet (settlement rule), BetStatus, EventOutcome, BetSettlementCommand. No framework code.
-application/port/in/     Use cases: publish outcome, match bets, settle bet, query and create bets
-application/port/out/    BetRepository, EventOutcomePublisher, BetSettlementPublisher
-application/service/     Use case implementations
-adapter/in/web/          REST controllers, DTOs, problem-detail error handler
-adapter/in/kafka/        event-outcomes listener
-adapter/in/rocketmq/     bet-settlements push consumer listener
-adapter/out/kafka/       event-outcomes publisher
-adapter/out/rocketmq/    bet-settlements publisher (real) and in-process publisher (mock profile)
-adapter/out/persistence/ JPA entity, Spring Data repository, mapping to the domain
-adapter/messaging/       Wire contracts of both topics
-config/                  Topic, error handler, RocketMQ clients, seed data
+web/                 REST controllers, problem-detail error handler
+web/dto/             Request and response bodies of the REST API
+messaging/kafka/     event-outcomes publisher and listener
+messaging/rocketmq/  bet-settlements publisher (real), in-process publisher (mock profile), push consumer
+messaging/dto/       Wire contracts of both topics
+service/             Publish outcome, match bets, settle bet, query and create bets; BetSettlementPublisher
+service/dto/         Service input (CreateBetCommand)
+persistence/         BetRepository; the JPA entity, Spring Data repository and mapper stay package-private
+domain/              Bet (settlement rule), BetStatus, EventOutcome, BetSettlementCommand. No framework code.
+config/              Topic, error handler, RocketMQ clients, seed data
 ```
 
-The application core only knows the ports, so switching between real RocketMQ and the mock is a profile choice.
+The REST controllers and both message listeners are entry points that call the services. The services use
+`persistence` and the message publishers. The JPA entity is kept separate from the domain `Bet`, so the settlement rule has no
+framework code. `BetSettlementPublisher` is the only interface: it has a real RocketMQ implementation and an in-process
+one, so switching to the mock is a profile choice.
 
 ### Messages
 
