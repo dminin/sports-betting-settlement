@@ -11,4 +11,11 @@ final class Preconditions {
         }
         return value;
     }
+
+    static <T> T requireNonNull(T value, String name) {
+        if (value == null) {
+            throw new IllegalArgumentException(name + " must not be null");
+        }
+        return value;
+    }
 }

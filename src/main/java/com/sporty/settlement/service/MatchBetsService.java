@@ -24,13 +24,9 @@ public class MatchBetsService {
         this.betSettlementPublisher = betSettlementPublisher;
     }
 
-    /**
-     * @return number of settlement requests published
-     */
-    public int requestSettlements(EventOutcome outcome) {
+    public void requestSettlements(EventOutcome outcome) {
         List<Bet> pendingBets = betRepository.findPendingByEventId(outcome.eventId());
         pendingBets.forEach(bet -> betSettlementPublisher.publish(outcome.settlementCommandFor(bet)));
         log.info("Requested settlement of {} pending bets for event {}", pendingBets.size(), outcome.eventId());
-        return pendingBets.size();
     }
 }

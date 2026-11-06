@@ -1,8 +1,8 @@
 package com.sporty.settlement.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -35,22 +35,16 @@ class MatchBetsServiceTest {
 
     @Test
     void publishesOneSettlementRequestPerPendingBet() {
-        given(betRepository.findPendingByEventId("EVT-1")).willReturn(List.of(pendingBet(1L), pendingBet(2L)));
+        given(betRepository.findPendingByEventId("EVT-1"))
+                .willReturn(List.of(pendingBet(1L), pendingBet(2L)))
+                .willReturn(List.of());
 
-        int requested = matchBetsService.requestSettlements(OUTCOME);
-
-        assertThat(requested).isEqualTo(2);
+        matchBetsService.requestSettlements(OUTCOME);
         verify(betSettlementPublisher).publish(new BetSettlementCommand(1L, "EVT-1", "TEAM-A"));
         verify(betSettlementPublisher).publish(new BetSettlementCommand(2L, "EVT-1", "TEAM-A"));
-    }
 
-    @Test
-    void publishesNothingWhenNoBetIsPending() {
-        given(betRepository.findPendingByEventId("EVT-1")).willReturn(List.of());
-
-        int requested = matchBetsService.requestSettlements(OUTCOME);
-
-        assertThat(requested).isZero();
+        clearInvocations(betSettlementPublisher);
+        matchBetsService.requestSettlements(OUTCOME);
         verify(betSettlementPublisher, never()).publish(any());
     }
 

@@ -54,11 +54,13 @@ docker compose up -d
 ```
 
 This starts Kafka, the RocketMQ name server, broker and proxy, and a one-shot `rocketmq-init` container that creates the
-`bet-settlements` topic. RocketMQ needs about 20 to 30 seconds; it is ready when the init container has exited:
+`bet-settlements` topic. RocketMQ needs about 20 to 30 seconds. Wait until the init container has exited and the proxy
+is listening on port 8081 (the init script does not wait for the proxy):
 
 ```bash
 docker compose ps -a        # rocketmq-init should show "Exited (0)"
 docker logs rocketmq-init   # ends with "create topic ... success"
+docker logs rmqproxy        # wait until the proxy reports it is ready / accepting connections
 ```
 
 ### 2. Start the application
@@ -147,7 +149,7 @@ Errors use RFC 9457 problem details; validation errors list the failing fields u
 ./mvnw test
 ```
 
-- Unit tests: the settlement rule in `Bet`, `MatchBetsService`, `SettleBetService`, and the RocketMQ consumer's acknowledge-or-retry decisions.
+- Unit tests: the settlement rule in `Bet`, matching and settling services, and the RocketMQ consumer's acknowledge-or-retry decisions.
 - Web slice test: validation and error mapping of `POST /api/event-outcomes`.
 - End-to-end test `BetSettlementFlowTest`: real Kafka in Testcontainers, `mock` profile for RocketMQ. It posts an outcome
   and waits until the bets are settled. It is skipped automatically when Docker is not available.
@@ -159,6 +161,7 @@ Layered layout under `com.sporty.settlement`:
 ```
 web/                 REST controllers, problem-detail error handler
 web/dto/             Request and response bodies of the REST API
+messaging/           Shared messaging exception
 messaging/kafka/     event-outcomes publisher and listener
 messaging/rocketmq/  bet-settlements publisher (real), in-process publisher (mock profile), push consumer
 messaging/dto/       Wire contracts of both topics
@@ -166,7 +169,7 @@ service/             Publish outcome, match bets, settle bet, query and create b
 service/dto/         Service input (CreateBetCommand)
 persistence/         BetRepository; the JPA entity, Spring Data repository and mapper stay package-private
 domain/              Bet (settlement rule), BetStatus, EventOutcome, BetSettlementCommand. No framework code.
-config/              Topic, error handler, RocketMQ clients, seed data
+config/              Clock, topic and RocketMQ properties, Kafka error handler, RocketMQ clients, seed data
 ```
 
 The REST controllers and both message listeners are entry points that call the services. The services use
@@ -185,7 +188,9 @@ one, so switching to the mock is a profile choice.
 
 Both brokers deliver at least once, so every step is idempotent:
 
-- Matching only picks bets that are still `PENDING`; publishing the same outcome twice requests nothing the second time.
+- Matching only picks bets that are still `PENDING`. If a repeated outcome arrives before the first settlements finish,
+  matching can publish duplicate requests; settlement idempotency (next bullet) makes those duplicates safe. Once every
+  bet is settled, a further outcome publishes nothing.
 - Settlement skips a bet that is already settled. Concurrent duplicates are caught by JPA optimistic locking (`@Version`);
   the losing message is retried and then skipped.
 - Kafka listener: transient failures are retried 3 times, 1 second apart, then logged and skipped. Malformed JSON and

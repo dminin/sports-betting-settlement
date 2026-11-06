@@ -1,6 +1,7 @@
 package com.sporty.settlement.domain;
 
 import static com.sporty.settlement.domain.Preconditions.requireNonBlank;
+import static com.sporty.settlement.domain.Preconditions.requireNonNull;
 
 /**
  * Request to settle a single bet against the winner of its event.
@@ -8,9 +9,7 @@ import static com.sporty.settlement.domain.Preconditions.requireNonBlank;
 public record BetSettlementCommand(Long betId, String eventId, String outcomeWinnerId) {
 
     public BetSettlementCommand {
-        if (betId == null) {
-            throw new IllegalArgumentException("betId must not be null");
-        }
+        requireNonNull(betId, "betId");
         requireNonBlank(eventId, "eventId");
         requireNonBlank(outcomeWinnerId, "outcomeWinnerId");
     }

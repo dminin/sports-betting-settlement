@@ -30,11 +30,10 @@ public class SettleBetService {
     public void settle(BetSettlementCommand command) {
         Bet bet = betRepository.findById(command.betId())
                 .orElseThrow(() -> new BetNotFoundException(command.betId()));
-        if (bet.isSettled()) {
+        if (!bet.settle(command, clock.instant())) {
             log.info("Bet {} is already settled as {}, skipping duplicate settlement", bet.id(), bet.status());
             return;
         }
-        bet.settle(command, clock.instant());
         betRepository.save(bet);
         log.info("Settled bet {} of user {} as {}", bet.id(), bet.userId(), bet.status());
     }

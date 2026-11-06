@@ -1,10 +1,10 @@
 package com.sporty.settlement.domain;
 
 import static com.sporty.settlement.domain.Preconditions.requireNonBlank;
+import static com.sporty.settlement.domain.Preconditions.requireNonNull;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Objects;
 
 /**
  * A user's stake on a participant ({@code eventWinnerId}) winning an event.
@@ -30,7 +30,7 @@ public final class Bet {
         this.eventMarketId = requireNonBlank(eventMarketId, "eventMarketId");
         this.eventWinnerId = requireNonBlank(eventWinnerId, "eventWinnerId");
         this.amount = requirePositive(amount);
-        this.status = Objects.requireNonNull(status, "status must not be null");
+        this.status = requireNonNull(status, "status");
         this.settledAt = settledAt;
         this.version = version;
     }
@@ -48,16 +48,27 @@ public final class Bet {
         return new Bet(id, userId, eventId, eventMarketId, eventWinnerId, amount, status, settledAt, version);
     }
 
-    public void settle(BetSettlementCommand command, Instant at) {
+    /**
+     * Settles this bet as WON or LOST. An already settled bet is left unchanged, so redelivered requests are safe.
+     *
+     * @return {@code true} if this call settled the bet; {@code false} if it was already settled
+     */
+    public boolean settle(BetSettlementCommand command, Instant at) {
+        Instant settledAtValue = requireNonNull(at, "settledAt");
         if (status.isSettled()) {
-            throw new BetAlreadySettledException(id, status);
+            return false;
+        }
+        if (id != null && !id.equals(command.betId())) {
+            throw new IllegalArgumentException(
+                    "Settlement targets bet " + command.betId() + ", but this bet is " + id);
         }
         if (!eventId.equals(command.eventId())) {
             throw new IllegalArgumentException(
                     "Bet " + id + " belongs to event " + eventId + ", not " + command.eventId());
         }
         this.status = eventWinnerId.equals(command.outcomeWinnerId()) ? BetStatus.WON : BetStatus.LOST;
-        this.settledAt = Objects.requireNonNull(at, "settledAt must not be null");
+        this.settledAt = settledAtValue;
+        return true;
     }
 
     public boolean isSettled() {

@@ -22,16 +22,16 @@ class BetJpaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, length = 255)
     private String userId;
 
-    @Column(name = "event_id", nullable = false)
+    @Column(name = "event_id", nullable = false, length = 255)
     private String eventId;
 
-    @Column(name = "event_market_id", nullable = false)
+    @Column(name = "event_market_id", nullable = false, length = 255)
     private String eventMarketId;
 
-    @Column(name = "event_winner_id", nullable = false)
+    @Column(name = "event_winner_id", nullable = false, length = 255)
     private String eventWinnerId;
 
     @Column(name = "amount", nullable = false, precision = 19, scale = 2)
