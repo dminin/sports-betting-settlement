@@ -8,6 +8,8 @@ import com.sporty.settlement.web.dto.CreateBetRequest;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,13 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/bets")
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BetController {
 
     private final BetService betService;
-
-    BetController(BetService betService) {
-        this.betService = betService;
-    }
 
     @GetMapping
     List<BetResponse> find(@RequestParam(required = false) String eventId,

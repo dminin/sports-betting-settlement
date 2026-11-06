@@ -4,25 +4,21 @@ import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.domain.EventOutcome;
 import com.sporty.settlement.persistence.BetRepository;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
  * Not transactional on purpose: no database transaction is held open while talking to the broker.
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class MatchBetsService {
-
-    private static final Logger log = LoggerFactory.getLogger(MatchBetsService.class);
 
     private final BetRepository betRepository;
     private final BetSettlementPublisher betSettlementPublisher;
-
-    MatchBetsService(BetRepository betRepository, BetSettlementPublisher betSettlementPublisher) {
-        this.betRepository = betRepository;
-        this.betSettlementPublisher = betSettlementPublisher;
-    }
 
     public void requestSettlements(EventOutcome outcome) {
         List<Bet> pendingBets = betRepository.findPendingByEventId(outcome.eventId());

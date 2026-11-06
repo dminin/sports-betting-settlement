@@ -4,16 +4,15 @@ import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.domain.BetStatus;
 import java.util.List;
 import java.util.Optional;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 @Repository
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetRepository {
 
     private final SpringDataBetJpaRepository jpaRepository;
-
-    BetRepository(SpringDataBetJpaRepository jpaRepository) {
-        this.jpaRepository = jpaRepository;
-    }
 
     /**
      * Persists the bet. Saving a stale copy (one whose version was changed concurrently) fails with an

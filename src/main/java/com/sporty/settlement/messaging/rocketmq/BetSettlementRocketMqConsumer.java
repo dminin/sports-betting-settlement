@@ -5,11 +5,12 @@ import com.sporty.settlement.messaging.dto.BetSettlementMessage;
 import com.sporty.settlement.service.BetNotFoundException;
 import com.sporty.settlement.service.SettleBetService;
 import java.nio.ByteBuffer;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.consumer.ConsumeResult;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
 import org.apache.rocketmq.client.apis.message.MessageView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -20,19 +21,14 @@ import tools.jackson.databind.json.JsonMapper;
  * broker redelivers (and eventually dead-letters) the message; messages that can never succeed are logged
  * and acknowledged.
  */
+@Slf4j
 @Component("betSettlementListener")
 @Profile("!mock")
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BetSettlementRocketMqConsumer implements MessageListener {
-
-    private static final Logger log = LoggerFactory.getLogger(BetSettlementRocketMqConsumer.class);
 
     private final SettleBetService settleBetService;
     private final JsonMapper jsonMapper;
-
-    BetSettlementRocketMqConsumer(SettleBetService settleBetService, JsonMapper jsonMapper) {
-        this.settleBetService = settleBetService;
-        this.jsonMapper = jsonMapper;
-    }
 
     @Override
     public ConsumeResult consume(MessageView messageView) {

@@ -25,6 +25,6 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # The runner has Docker, so the Testcontainers end-to-end test runs instead of being skipped.
+      # The runner has Docker, so the Testcontainers end-to-end tests run instead of being skipped.
       - name: Build and test
         run: ./mvnw -B -ntp verify

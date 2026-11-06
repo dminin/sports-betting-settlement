@@ -5,17 +5,16 @@ import com.sporty.settlement.domain.BetStatus;
 import com.sporty.settlement.persistence.BetRepository;
 import com.sporty.settlement.service.dto.CreateBetCommand;
 import java.util.List;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetService {
 
     private final BetRepository betRepository;
-
-    BetService(BetRepository betRepository) {
-        this.betRepository = betRepository;
-    }
 
     @Transactional(readOnly = true)
     public Bet getById(Long id) {

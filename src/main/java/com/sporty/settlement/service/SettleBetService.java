@@ -4,23 +4,19 @@ import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.persistence.BetRepository;
 import java.time.Clock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class SettleBetService {
-
-    private static final Logger log = LoggerFactory.getLogger(SettleBetService.class);
 
     private final BetRepository betRepository;
     private final Clock clock;
-
-    SettleBetService(BetRepository betRepository, Clock clock) {
-        this.betRepository = betRepository;
-        this.clock = clock;
-    }
 
     /**
      * Settles the bet as WON or LOST. Settling an already settled bet is a no-op, so redelivered

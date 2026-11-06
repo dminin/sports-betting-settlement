@@ -5,23 +5,22 @@ import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.messaging.MessagePublishingException;
 import com.sporty.settlement.messaging.dto.BetSettlementMessage;
 import com.sporty.settlement.service.BetSettlementPublisher;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
 import org.apache.rocketmq.client.apis.message.Message;
 import org.apache.rocketmq.client.apis.producer.Producer;
 import org.apache.rocketmq.client.apis.producer.SendReceipt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
+@Slf4j
 @Component
 @Profile("!mock")
 class RocketMqBetSettlementPublisher implements BetSettlementPublisher {
 
     private static final String SETTLEMENT_TAG = "SETTLE";
-    private static final Logger log = LoggerFactory.getLogger(RocketMqBetSettlementPublisher.class);
 
     private final Producer producer;
     private final ClientServiceProvider provider;

@@ -4,18 +4,16 @@ import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.persistence.BetRepository;
 import java.math.BigDecimal;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnBooleanProperty(name = "app.seed.enabled")
 class SeedDataConfig {
-
-    private static final Logger log = LoggerFactory.getLogger(SeedDataConfig.class);
 
     @Bean
     ApplicationRunner seedBets(BetRepository betRepository) {

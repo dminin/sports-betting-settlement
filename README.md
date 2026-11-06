@@ -33,15 +33,17 @@ flowchart TD
 | RocketMQ | `rocketmq-client-java` 5.2.2 (gRPC client, through the proxy), broker `apache/rocketmq:5.5.0` |
 | Storage  | H2 in-memory with Spring Data JPA |
 | API docs | springdoc-openapi 3.2 (Swagger UI) |
-| Tests    | JUnit 5, Mockito, MockMvc, Testcontainers 2 (Kafka), Awaitility |
+| Boilerplate | Lombok (loggers, constructor injection, JPA entity accessors) |
+| Tests    | JUnit 5, Mockito, MockMvc, Testcontainers 2 (Kafka and RocketMQ), Awaitility |
 
 The RocketMQ Spring Boot starter is not used: its latest release (2.3.6) targets Spring Boot 2.7 and Jackson 2. The plain gRPC client
-has no dependency conflicts with Boot 4 and is wired as two beans in `RocketMqConfig`.
+has no dependency conflicts with Boot 4. `RocketMqConfig` wires its producer and push consumer as beans.
 
 ## Prerequisites
 
 - JDK 25 (`java -version`)
-- Docker with Compose v2 (for Kafka and RocketMQ, and for the end-to-end test)
+- Docker with Compose v2 (for Kafka and RocketMQ, and for the end-to-end tests)
+- For an IDE: Lombok support (bundled in IntelliJ IDEA; in VS Code / Cursor through the Java extension)
 
 Ports used on localhost: `8080` (app), `9092` (Kafka), `9876` (RocketMQ name server), `8081` (RocketMQ proxy).
 
@@ -59,8 +61,8 @@ is listening on port 8081 (the init script does not wait for the proxy):
 
 ```bash
 docker compose ps -a        # rocketmq-init should show "Exited (0)"
-docker logs rocketmq-init   # ends with "create topic ... success"
-docker logs rmqproxy        # wait until the proxy reports it is ready / accepting connections
+docker logs rocketmq-init   # prints "create topic to ... success."
+docker logs rmqproxy        # prints "rocketmq-proxy startup successfully"
 ```
 
 ### 2. Start the application
@@ -139,20 +141,25 @@ docker compose down
 | POST   | `/api/event-outcomes`   | Publish `{eventId, eventName, eventWinnerId}` to Kafka. `202` on broker ack, `400` on invalid body, `503` if Kafka is unreachable. |
 | GET    | `/api/bets`             | List bets, optional filters `eventId` and `status` (`PENDING`, `WON`, `LOST`). |
 | GET    | `/api/bets/{id}`        | One bet, `404` if unknown. |
-| POST   | `/api/bets`             | Place a bet `{userId, eventId, eventMarketId, eventWinnerId, amount}`. `201` with `Location`. |
+| POST   | `/api/bets`             | Place a bet `{userId, eventId, eventMarketId, eventWinnerId, amount}`. `201` with `Location`, `400` on invalid body. |
 
 Errors use RFC 9457 problem details; validation errors list the failing fields under `errors`.
 
 ## Tests
 
 ```bash
-./mvnw test
+./mvnw -B -ntp verify
 ```
+
+This is the same command that CI runs (`.github/workflows/ci.yml`). The brokers from `docker-compose.yml` are not
+needed: the end-to-end tests start their own containers.
 
 - Unit tests: the settlement rule in `Bet`, matching and settling services, and the RocketMQ consumer's acknowledge-or-retry decisions.
 - Web slice test: validation and error mapping of `POST /api/event-outcomes`.
-- End-to-end test `BetSettlementFlowTest`: real Kafka in Testcontainers, `mock` profile for RocketMQ. It posts an outcome
-  and waits until the bets are settled. It is skipped automatically when Docker is not available.
+- End-to-end tests: they post an outcome and wait until the bets are settled, with real Kafka in Testcontainers.
+  `RocketMqBetSettlementFlowTest` runs the default profile against a real RocketMQ broker: the name server, the broker
+  and the gRPC proxy run in one `apache/rocketmq:5.5.0` container, and the test creates the topic itself.
+  `BetSettlementFlowTest` runs the `mock` profile. Both are skipped automatically when Docker is not available.
 
 ## Design
 
@@ -169,7 +176,7 @@ service/             Publish outcome, match bets, settle bet, query and create b
 service/dto/         Service input (CreateBetCommand)
 persistence/         BetRepository; the JPA entity, Spring Data repository and mapper stay package-private
 domain/              Bet (settlement rule), BetStatus, EventOutcome, BetSettlementCommand. No framework code.
-config/              Clock, topic and RocketMQ properties, Kafka error handler, RocketMQ clients, seed data
+config/              Clock, topic and RocketMQ properties, Kafka topic and error handler, RocketMQ clients, seed data
 ```
 
 The REST controllers and both message listeners are entry points that call the services. The services use
@@ -182,7 +189,8 @@ one, so switching to the mock is a profile choice.
 - `event-outcomes` (Kafka): JSON `{"eventId","eventName","eventWinnerId"}`, keyed by `eventId`, so all outcomes of one event
   stay ordered on one partition. The app creates the topic (3 partitions) on startup.
 - `bet-settlements` (RocketMQ): one message per bet, JSON `{"betId","eventId","outcomeWinnerId"}`, message key = `betId`,
-  tag `SETTLE`. The consumer applies the WON/LOST rule, so it lives in one place, the domain.
+  tag `SETTLE`. The message carries the outcome winner, not the result: the consumer settles the bet through
+  `Bet.settle`, so the WON/LOST rule lives in one place, the domain.
 
 ### Reliability
 

@@ -13,9 +13,16 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "bets", indexes = @Index(name = "idx_bets_event_status", columnList = "event_id, status"))
+@Getter(AccessLevel.PACKAGE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 class BetJpaEntity {
 
     @Id
@@ -46,56 +53,4 @@ class BetJpaEntity {
 
     @Version
     private Long version;
-
-    protected BetJpaEntity() {
-    }
-
-    BetJpaEntity(Long id, String userId, String eventId, String eventMarketId, String eventWinnerId,
-                 BigDecimal amount, BetStatus status, Instant settledAt, Long version) {
-        this.id = id;
-        this.userId = userId;
-        this.eventId = eventId;
-        this.eventMarketId = eventMarketId;
-        this.eventWinnerId = eventWinnerId;
-        this.amount = amount;
-        this.status = status;
-        this.settledAt = settledAt;
-        this.version = version;
-    }
-
-    Long getId() {
-        return id;
-    }
-
-    String getUserId() {
-        return userId;
-    }
-
-    String getEventId() {
-        return eventId;
-    }
-
-    String getEventMarketId() {
-        return eventMarketId;
-    }
-
-    String getEventWinnerId() {
-        return eventWinnerId;
-    }
-
-    BigDecimal getAmount() {
-        return amount;
-    }
-
-    BetStatus getStatus() {
-        return status;
-    }
-
-    Instant getSettledAt() {
-        return settledAt;
-    }
-
-    Long getVersion() {
-        return version;
-    }
 }

@@ -6,16 +6,14 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.apis.ClientConfiguration;
 import org.apache.rocketmq.client.apis.ClientException;
 import org.apache.rocketmq.client.apis.ClientServiceProvider;
 import org.apache.rocketmq.client.apis.consumer.FilterExpression;
-import org.apache.rocketmq.client.apis.consumer.FilterExpressionType;
 import org.apache.rocketmq.client.apis.consumer.MessageListener;
 import org.apache.rocketmq.client.apis.consumer.PushConsumer;
 import org.apache.rocketmq.client.apis.producer.Producer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,11 +22,11 @@ import org.springframework.context.annotation.Profile;
 /**
  * Real RocketMQ wiring through the gRPC proxy. Replaced by an in-process publisher in the {@code mock} profile.
  */
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 @Profile("!mock")
 class RocketMqConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(RocketMqConfig.class);
     private static final Duration CONSUMER_CLOSE_TIMEOUT = Duration.ofSeconds(5);
 
     @Bean

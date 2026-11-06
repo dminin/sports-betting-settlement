@@ -4,8 +4,7 @@ import com.sporty.settlement.messaging.MessagePublishingException;
 import com.sporty.settlement.service.BetNotFoundException;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -22,10 +21,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * Maps application errors to RFC 9457 problem details; framework errors (validation, unreadable body,
  * type mismatch) are handled by {@link ResponseEntityExceptionHandler}.
  */
+@Slf4j
 @RestControllerAdvice
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
