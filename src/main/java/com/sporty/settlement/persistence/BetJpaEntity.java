@@ -19,38 +19,39 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "bets", indexes = @Index(name = "idx_bets_event_status", columnList = "event_id, status"))
+@Table(
+    name = "bets",
+    indexes = @Index(name = "idx_bets_event_status", columnList = "event_id, status"))
 @Getter(AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 class BetJpaEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "user_id", nullable = false, length = 255)
-    private String userId;
+  @Column(name = "user_id", nullable = false, length = 255)
+  private String userId;
 
-    @Column(name = "event_id", nullable = false, length = 255)
-    private String eventId;
+  @Column(name = "event_id", nullable = false, length = 255)
+  private String eventId;
 
-    @Column(name = "event_market_id", nullable = false, length = 255)
-    private String eventMarketId;
+  @Column(name = "event_market_id", nullable = false, length = 255)
+  private String eventMarketId;
 
-    @Column(name = "event_winner_id", nullable = false, length = 255)
-    private String eventWinnerId;
+  @Column(name = "event_winner_id", nullable = false, length = 255)
+  private String eventWinnerId;
 
-    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
-    private BigDecimal amount;
+  @Column(name = "amount", nullable = false, precision = 19, scale = 2)
+  private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 16)
-    private BetStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 16)
+  private BetStatus status;
 
-    @Column(name = "settled_at")
-    private Instant settledAt;
+  @Column(name = "settled_at")
+  private Instant settledAt;
 
-    @Version
-    private Long version;
+  @Version private Long version;
 }

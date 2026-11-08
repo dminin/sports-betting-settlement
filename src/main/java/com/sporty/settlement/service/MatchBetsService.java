@@ -17,12 +17,16 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class MatchBetsService {
 
-    private final BetRepository betRepository;
-    private final BetSettlementPublisher betSettlementPublisher;
+  private final BetRepository betRepository;
+  private final BetSettlementPublisher betSettlementPublisher;
 
-    public void requestSettlements(EventOutcome outcome) {
-        List<Bet> pendingBets = betRepository.findPendingByEventId(outcome.eventId());
-        pendingBets.forEach(bet -> betSettlementPublisher.publish(outcome.settlementCommandFor(bet)));
-        log.info("Requested settlement of {} pending bets for event {}", pendingBets.size(), outcome.eventId());
-    }
+  /** Publishes one settlement request for each pending bet on the outcome's event. */
+  public void requestSettlements(EventOutcome outcome) {
+    List<Bet> pendingBets = betRepository.findPendingByEventId(outcome.eventId());
+    pendingBets.forEach(bet -> betSettlementPublisher.publish(outcome.settlementCommandFor(bet)));
+    log.info(
+        "Requested settlement of {} pending bets for event {}",
+        pendingBets.size(),
+        outcome.eventId());
+  }
 }

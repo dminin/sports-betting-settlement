@@ -52,18 +52,12 @@ Ports used on localhost: `8080` (app), `9092` (Kafka), `9876` (RocketMQ name ser
 ### 1. Start the brokers
 
 ```bash
-docker compose up -d
+docker compose up -d --wait
 ```
 
-This starts Kafka, the RocketMQ name server, broker and proxy, and a one-shot `rocketmq-init` container that creates the
-`bet-settlements` topic. RocketMQ needs about 20 to 30 seconds. Wait until the init container has exited and the proxy
-is listening on port 8081 (the init script does not wait for the proxy):
-
-```bash
-docker compose ps -a        # rocketmq-init should show "Exited (0)"
-docker logs rocketmq-init   # prints "create topic to ... success."
-docker logs rmqproxy        # prints "rocketmq-proxy startup successfully"
-```
+This starts Kafka and the RocketMQ name server, broker and proxy. A one-shot `rocketmq-init` container creates the
+`bet-settlements` topic before the proxy starts. The command returns when the proxy accepts connections on port 8081,
+after about 30 seconds.
 
 ### 2. Start the application
 

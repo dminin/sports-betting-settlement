@@ -18,42 +18,67 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Maps application errors to RFC 9457 problem details; framework errors (validation, unreadable body,
- * type mismatch) are handled by {@link ResponseEntityExceptionHandler}.
+ * Maps application errors to RFC 9457 problem details; framework errors (validation, unreadable
+ * body, type mismatch) are handled by {@link ResponseEntityExceptionHandler}.
  */
 @Slf4j
 @RestControllerAdvice
 class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-                                                                  HttpHeaders headers, HttpStatusCode status,
-                                                                  WebRequest request) {
-        ProblemDetail problem = ex.getBody();
-        problem.setProperty("errors", ex.getBindingResult().getFieldErrors().stream()
-                .collect(Collectors.toMap(FieldError::getField, this::messageOf, (first, second) -> first,
-                        TreeMap::new)));
-        return handleExceptionInternal(ex, problem, headers, status, request);
-    }
+  @Override
+  protected ResponseEntity<Object> handleExceptionInternal(
+      Exception ex,
+      Object body,
+      HttpHeaders headers,
+      HttpStatusCode statusCode,
+      WebRequest request) {
+    logHandledException(ex, statusCode);
+    return super.handleExceptionInternal(ex, body, headers, statusCode, request);
+  }
 
-    @ExceptionHandler(BetNotFoundException.class)
-    ProblemDetail handleBetNotFound(BetNotFoundException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
+  @Override
+  protected ResponseEntity<Object> handleMethodArgumentNotValid(
+      MethodArgumentNotValidException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    ProblemDetail problem = ex.getBody();
+    problem.setProperty(
+        "errors",
+        ex.getBindingResult().getFieldErrors().stream()
+            .collect(
+                Collectors.toMap(
+                    FieldError::getField,
+                    this::messageOf,
+                    (first, second) -> first,
+                    TreeMap::new)));
+    return handleExceptionInternal(ex, problem, headers, status, request);
+  }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
+  @ExceptionHandler(BetNotFoundException.class)
+  ProblemDetail handleBetNotFound(BetNotFoundException ex) {
+    logHandledException(ex, HttpStatus.NOT_FOUND);
+    return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+  }
 
-    @ExceptionHandler(MessagePublishingException.class)
-    ProblemDetail handlePublishingFailure(MessagePublishingException ex) {
-        log.error("Message publishing failed", ex);
-        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE,
-                "Message broker is unavailable, please retry later");
-    }
+  @ExceptionHandler(IllegalArgumentException.class)
+  ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+    logHandledException(ex, HttpStatus.BAD_REQUEST);
+    return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
 
-    private String messageOf(FieldError error) {
-        return error.getDefaultMessage() == null ? "is invalid" : error.getDefaultMessage();
-    }
+  @ExceptionHandler(MessagePublishingException.class)
+  ProblemDetail handlePublishingFailure(MessagePublishingException ex) {
+    logHandledException(ex, HttpStatus.SERVICE_UNAVAILABLE);
+    return ProblemDetail.forStatusAndDetail(
+        HttpStatus.SERVICE_UNAVAILABLE, "Message broker is unavailable, please retry later");
+  }
+
+  private void logHandledException(Exception ex, HttpStatusCode statusCode) {
+    log.error("Handled exception with HTTP status {}", statusCode.value(), ex);
+  }
+
+  private String messageOf(FieldError error) {
+    return error.getDefaultMessage() == null ? "is invalid" : error.getDefaultMessage();
+  }
 }

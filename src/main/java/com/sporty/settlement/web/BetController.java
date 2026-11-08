@@ -24,22 +24,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BetController {
 
-    private final BetService betService;
+  private final BetService betService;
 
-    @GetMapping
-    List<BetResponse> find(@RequestParam(required = false) String eventId,
-                           @RequestParam(required = false) BetStatus status) {
-        return betService.find(eventId, status).stream().map(BetResponse::from).toList();
-    }
+  @GetMapping
+  List<BetResponse> find(
+      @RequestParam(required = false) String eventId,
+      @RequestParam(required = false) BetStatus status) {
+    return betService.find(eventId, status).stream().map(BetResponse::from).toList();
+  }
 
-    @GetMapping("/{id}")
-    BetResponse getById(@PathVariable Long id) {
-        return BetResponse.from(betService.getById(id));
-    }
+  @GetMapping("/{id}")
+  BetResponse getById(@PathVariable Long id) {
+    return BetResponse.from(betService.getById(id));
+  }
 
-    @PostMapping
-    ResponseEntity<BetResponse> create(@Valid @RequestBody CreateBetRequest request) {
-        Bet bet = betService.create(request.toCommand());
-        return ResponseEntity.created(URI.create("/api/bets/" + bet.id())).body(BetResponse.from(bet));
-    }
+  @PostMapping
+  ResponseEntity<BetResponse> create(@Valid @RequestBody CreateBetRequest request) {
+    Bet bet = betService.create(request.toCommand());
+    return ResponseEntity.created(URI.create("/api/bets/" + bet.id())).body(BetResponse.from(bet));
+  }
 }

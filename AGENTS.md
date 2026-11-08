@@ -10,7 +10,7 @@ Flow: `POST /api/event-outcomes` -> Kafka `event-outcomes` -> `MatchBetsService`
 - One test class or method: `./mvnw test -Dtest=BetTest` or `./mvnw test -Dtest='BetTest#betOnTheWinnerIsWon'`.
 - The end-to-end tests need Docker: `RocketMqBetSettlementFlowTest` (Testcontainers Kafka and real RocketMQ) and `BetSettlementFlowTest` (Testcontainers Kafka, `mock` profile). Without Docker they are skipped, so a green build without Docker does not prove the flow.
 - Run with RocketMQ mocked (needs only Kafka): `docker compose up -d kafka`, then `./mvnw spring-boot:run -Dspring-boot.run.profiles=mock`.
-- Run with real RocketMQ: `docker compose up -d`, wait until `docker compose ps -a` shows `rocketmq-init` as `Exited (0)`, then `./mvnw spring-boot:run`.
+- Run with real RocketMQ: `docker compose up -d --wait` (it returns when the RocketMQ proxy is healthy), then `./mvnw spring-boot:run`.
 - Manual check: run the requests in `http/bet-settlement.http` from top to bottom. Each one has a comment with the expected result for the seeded data. Restart the app to reset the H2 data.
 - Stop the brokers: `docker compose down`.
 
@@ -37,6 +37,7 @@ Layered packages under `com.sporty.settlement`. The package map is in `README.md
 - Both brokers deliver at least once, so every handler must be idempotent. Matching selects only `PENDING` bets. Settlement skips settled bets. `@Version` optimistic locking stops concurrent duplicates.
 - `MatchBetsService` has no transaction on purpose: no database transaction stays open during broker I/O.
 - Three places classify errors, and they must agree: `web/GlobalExceptionHandler` (HTTP status), `config/KafkaConfig` (exceptions that are not retried) and `messaging/rocketmq/BetSettlementRocketMqConsumer` (acknowledge or redeliver). If you add an exception type, decide how each of the three handles it.
+- Centralize HTTP exception handling in `web/GlobalExceptionHandler` with `@RestControllerAdvice`, and log every handled exception at `ERROR` with its HTTP status and stack trace.
 - Kafka records use `eventId` as the key, so the outcomes of one event stay in order.
 - Get the time from the injected `Clock` (`config/ClockConfig`). Tests use `Clock.fixed`.
 
@@ -54,7 +55,7 @@ No formatter is configured, so match the code around you.
 
 - Use records for DTOs and value objects. Inject dependencies through package-private constructors: `@RequiredArgsConstructor(access = AccessLevel.PACKAGE)`, or a hand-written constructor when it does more than assign fields. Main code does not use `var` or field `@Autowired`.
 - Lombok: `@Slf4j` for loggers, `@RequiredArgsConstructor` for injection, and `@Getter` / `@NoArgsConstructor` / `@AllArgsConstructor` on JPA entities. Do not use `@Data`, `@Builder`, `@Value`, `@Setter` or experimental features. The domain `Bet` keeps hand-written record-style accessors.
-- Use 4-space indents and lines of up to 120 characters. Put static imports first, then the other imports in alphabetical order, with no wildcards.
+- Follow Google Java Style: use 2-space indents and lines of up to 100 characters. Put static imports first, then the other imports in alphabetical order, with no wildcards.
 - Log with SLF4J `{}` placeholders, and include the ids (`betId`, `eventId`).
 - Write Javadoc only for contracts: null semantics, thrown exceptions, idempotency. Write a comment only for a constraint that the code cannot show.
 - Put input validation on `web/dto` with Bean Validation. Put domain invariants in constructors (`Preconditions.requireNonBlank`), which throw `IllegalArgumentException` and give HTTP 400.

@@ -47,14 +47,18 @@ services:
     image: apache/rocketmq:5.5.0
     container_name: rmqproxy
     depends_on:
-      - rmqbroker
+      rocketmq-init:
+        condition: service_completed_successfully
     ports:
       - "8081:8081"
-    restart: on-failure
     environment:
       NAMESRV_ADDR: rmqnamesrv:9876
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     command: sh mqproxy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8081"]
+      interval: 2s
+      retries: 30
 
   # One-shot job: the gRPC client cannot auto-create topics through the proxy.
   rocketmq-init:

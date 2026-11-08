@@ -10,25 +10,34 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Provides transactional operations for creating and querying bets. */
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetService {
 
-    private final BetRepository betRepository;
+  private final BetRepository betRepository;
 
-    @Transactional(readOnly = true)
-    public Bet getById(Long id) {
-        return betRepository.findById(id).orElseThrow(() -> new BetNotFoundException(id));
-    }
+  /** Returns the requested bet or throws when it does not exist. */
+  @Transactional(readOnly = true)
+  public Bet getById(Long id) {
+    return betRepository.findById(id).orElseThrow(() -> new BetNotFoundException(id));
+  }
 
-    @Transactional(readOnly = true)
-    public List<Bet> find(String eventId, BetStatus status) {
-        return betRepository.find(eventId, status);
-    }
+  /** Finds bets that match the supplied optional event and status filters. */
+  @Transactional(readOnly = true)
+  public List<Bet> find(String eventId, BetStatus status) {
+    return betRepository.find(eventId, status);
+  }
 
-    @Transactional
-    public Bet create(CreateBetCommand command) {
-        return betRepository.save(Bet.place(command.userId(), command.eventId(), command.eventMarketId(),
-                command.eventWinnerId(), command.amount()));
-    }
+  /** Places and persists a new pending bet. */
+  @Transactional
+  public Bet create(CreateBetCommand command) {
+    return betRepository.save(
+        Bet.place(
+            command.userId(),
+            command.eventId(),
+            command.eventMarketId(),
+            command.eventWinnerId(),
+            command.amount()));
+  }
 }

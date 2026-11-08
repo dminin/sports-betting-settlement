@@ -26,9 +26,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 /**
- * Full flow against a real Kafka broker: REST -> Kafka -> matching -> bet-settlements -> settlement. Subclasses
- * choose how {@code bet-settlements} is delivered. Each subclass gets its own context and brokers, so the context is
- * closed before the containers of the next subclass start.
+ * Full flow against a real Kafka broker: REST -> Kafka -> matching -> bet-settlements ->
+ * settlement. Subclasses choose how {@code bet-settlements} is delivered. Each subclass gets its
+ * own context and brokers, so the context is closed before the containers of the next subclass
+ * start.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,51 +37,59 @@ import org.testcontainers.kafka.KafkaContainer;
 @Testcontainers(disabledWithoutDocker = true)
 abstract class AbstractBetSettlementFlowTest {
 
-    @Container
-    @ServiceConnection
-    static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:4.2.2");
+  @Container @ServiceConnection
+  static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:4.2.2");
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @Autowired
-    private BetService betService;
+  @Autowired private BetService betService;
 
-    @Test
-    void publishedOutcomeSettlesPendingBetsOfTheEvent() throws Exception {
-        createBet("user-a", "EVT-IT-1", "TEAM-X");
-        createBet("user-b", "EVT-IT-1", "TEAM-Y");
-        createBet("user-c", "EVT-IT-2", "TEAM-X");
+  @Test
+  void publishedOutcomeSettlesPendingBetsOfTheEvent() throws Exception {
+    createBet("user-a", "EVT-IT-1", "TEAM-X");
+    createBet("user-b", "EVT-IT-1", "TEAM-Y");
+    createBet("user-c", "EVT-IT-2", "TEAM-X");
 
-        mockMvc.perform(post("/api/event-outcomes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"eventId":"EVT-IT-1","eventName":"X vs Y","eventWinnerId":"TEAM-X"}"""))
-                .andExpect(status().isAccepted());
+    mockMvc
+        .perform(
+            post("/api/event-outcomes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"eventId":"EVT-IT-1","eventName":"X vs Y","eventWinnerId":"TEAM-X"}\
+                    """))
+        .andExpect(status().isAccepted());
 
-        await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-            Map<String, Bet> betsByUser = byUser(betService.find("EVT-IT-1", null));
-            assertThat(betsByUser.get("user-a").status()).isEqualTo(BetStatus.WON);
-            assertThat(betsByUser.get("user-b").status()).isEqualTo(BetStatus.LOST);
-            assertThat(betsByUser.values()).allSatisfy(bet -> assertThat(bet.settledAt()).isNotNull());
+    await()
+        .atMost(Duration.ofSeconds(60))
+        .untilAsserted(() -> {
+          Map<String, Bet> betsByUser = byUser(betService.find("EVT-IT-1", null));
+          assertThat(betsByUser.get("user-a").status()).isEqualTo(BetStatus.WON);
+          assertThat(betsByUser.get("user-b").status()).isEqualTo(BetStatus.LOST);
+          assertThat(betsByUser.values())
+              .allSatisfy(bet -> assertThat(bet.settledAt()).isNotNull());
         });
-        assertThat(betService.find("EVT-IT-2", null))
-                .singleElement()
-                .extracting(Bet::status)
-                .isEqualTo(BetStatus.PENDING);
-    }
+    assertThat(betService.find("EVT-IT-2", null))
+        .singleElement()
+        .extracting(Bet::status)
+        .isEqualTo(BetStatus.PENDING);
+  }
 
-    private void createBet(String userId, String eventId, String winnerId) throws Exception {
-        mockMvc.perform(post("/api/bets")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"userId":"%s","eventId":"%s","eventMarketId":"MKT-1",
-                                 "eventWinnerId":"%s","amount":10.00}"""
-                                .formatted(userId, eventId, winnerId)))
-                .andExpect(status().isCreated());
-    }
+  private void createBet(String userId, String eventId, String winnerId) throws Exception {
+    mockMvc
+        .perform(
+            post("/api/bets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"userId":"%s","eventId":"%s","eventMarketId":"MKT-1",
+                     "eventWinnerId":"%s","amount":10.00}\
+                    """
+                        .formatted(userId, eventId, winnerId)))
+        .andExpect(status().isCreated());
+  }
 
-    private static Map<String, Bet> byUser(List<Bet> bets) {
-        return bets.stream().collect(Collectors.toMap(Bet::userId, Function.identity()));
-    }
+  private static Map<String, Bet> byUser(List<Bet> bets) {
+    return bets.stream().collect(Collectors.toMap(Bet::userId, Function.identity()));
+  }
 }

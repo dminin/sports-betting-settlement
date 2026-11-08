@@ -21,45 +21,57 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(EventOutcomeController.class)
 class EventOutcomeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+  @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private PublishEventOutcomeService publishEventOutcomeService;
+  @MockitoBean private PublishEventOutcomeService publishEventOutcomeService;
 
-    @Test
-    void acceptsValidOutcome() throws Exception {
-        mockMvc.perform(post("/api/event-outcomes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"eventId":"EVT-1","eventName":"A vs B","eventWinnerId":"TEAM-A"}"""))
-                .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.eventId").value("EVT-1"));
+  @Test
+  void acceptsValidOutcome() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/event-outcomes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"eventId":"EVT-1","eventName":"A vs B","eventWinnerId":"TEAM-A"}\
+                    """))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.eventId").value("EVT-1"));
 
-        verify(publishEventOutcomeService).publish(new EventOutcome("EVT-1", "A vs B", "TEAM-A"));
-    }
+    verify(publishEventOutcomeService).publish(new EventOutcome("EVT-1", "A vs B", "TEAM-A"));
+  }
 
-    @Test
-    void rejectsOutcomeWithMissingWinner() throws Exception {
-        mockMvc.perform(post("/api/event-outcomes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"eventId":"EVT-1","eventName":"A vs B"}"""))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.errors.eventWinnerId").exists());
+  @Test
+  void rejectsOutcomeWithMissingWinner() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/event-outcomes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"eventId":"EVT-1","eventName":"A vs B"}\
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.errors.eventWinnerId").exists());
 
-        verify(publishEventOutcomeService, never()).publish(any());
-    }
+    verify(publishEventOutcomeService, never()).publish(any());
+  }
 
-    @Test
-    void returnsServiceUnavailableWhenBrokerIsDown() throws Exception {
-        willThrow(new MessagePublishingException("down", null)).given(publishEventOutcomeService).publish(any());
+  @Test
+  void returnsServiceUnavailableWhenBrokerIsDown() throws Exception {
+    willThrow(new MessagePublishingException("down", null))
+        .given(publishEventOutcomeService)
+        .publish(any());
 
-        mockMvc.perform(post("/api/event-outcomes")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"eventId":"EVT-1","eventName":"A vs B","eventWinnerId":"TEAM-A"}"""))
-                .andExpect(status().isServiceUnavailable());
-    }
+    mockMvc
+        .perform(
+            post("/api/event-outcomes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"eventId":"EVT-1","eventName":"A vs B","eventWinnerId":"TEAM-A"}\
+                    """))
+        .andExpect(status().isServiceUnavailable());
+  }
 }

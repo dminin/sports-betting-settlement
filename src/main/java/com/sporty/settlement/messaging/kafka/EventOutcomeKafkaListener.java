@@ -16,13 +16,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class EventOutcomeKafkaListener {
 
-    private final MatchBetsService matchBetsService;
+  private final MatchBetsService matchBetsService;
 
-    @KafkaListener(topics = "${app.kafka.event-outcomes-topic}")
-    void onEventOutcome(@Payload EventOutcomeMessage message,
-                        @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
-                        @Header(KafkaHeaders.OFFSET) long offset) {
-        log.info("Received outcome of event {} (partition={}, offset={})", message.eventId(), partition, offset);
-        matchBetsService.requestSettlements(message.toDomain());
-    }
+  @KafkaListener(topics = "${app.kafka.event-outcomes-topic}")
+  void onEventOutcome(
+      @Payload EventOutcomeMessage message,
+      @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+      @Header(KafkaHeaders.OFFSET) long offset) {
+    log.info(
+        "Received outcome of event {} (partition={}, offset={})",
+        message.eventId(),
+        partition,
+        offset);
+    matchBetsService.requestSettlements(message.toDomain());
+  }
 }
