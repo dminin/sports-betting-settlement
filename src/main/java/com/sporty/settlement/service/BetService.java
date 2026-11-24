@@ -4,40 +4,49 @@ import com.sporty.settlement.domain.Bet;
 import com.sporty.settlement.domain.BetStatus;
 import com.sporty.settlement.persistence.BetRepository;
 import com.sporty.settlement.service.dto.CreateBetCommand;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Provides transactional operations for creating and querying bets. */
+import java.util.List;
+
+/**
+ * Provides transactional operations for creating and querying bets.
+ */
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetService {
 
-  private final BetRepository betRepository;
+    private final BetRepository betRepository;
 
-  /** Returns the requested bet or throws when it does not exist. */
-  @Transactional(readOnly = true)
-  public Bet getById(Long id) {
-    return betRepository.findById(id).orElseThrow(() -> new BetNotFoundException(id));
-  }
+    /**
+     * Returns the requested bet or throws when it does not exist.
+     */
+    @Transactional(readOnly = true)
+    public Bet getById(Long id) {
+        return betRepository.findById(id).orElseThrow(() -> new BetNotFoundException(id));
+    }
 
-  /** Finds bets that match the supplied optional event and status filters. */
-  @Transactional(readOnly = true)
-  public List<Bet> find(String eventId, BetStatus status) {
-    return betRepository.find(eventId, status);
-  }
+    /**
+     * Finds bets that match the supplied optional event and status filters.
+     */
+    @Transactional(readOnly = true)
+    public List<Bet> find(String eventId, BetStatus status) {
+        return betRepository.find(eventId, status);
+    }
 
-  /** Places and persists a new pending bet. */
-  @Transactional
-  public Bet create(CreateBetCommand command) {
-    return betRepository.save(
-        Bet.place(
-            command.userId(),
-            command.eventId(),
-            command.eventMarketId(),
-            command.eventWinnerId(),
-            command.amount()));
-  }
+    /**
+     * Places and persists a new pending bet.
+     */
+    @Transactional
+    public Bet create(CreateBetCommand command) {
+        return betRepository.save(
+            Bet.place(
+                command.userId(),
+                command.eventId(),
+                command.eventMarketId(),
+                command.eventWinnerId(),
+                command.amount()));
+    }
 }

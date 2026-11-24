@@ -56,7 +56,7 @@ services:
       JAVA_OPT_EXT: "-Xms256m -Xmx256m -Xmn128m"
     command: sh mqproxy
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8081"]
+      test: [ "CMD", "bash", "-c", "echo > /dev/tcp/localhost/8081" ]
       interval: 2s
       retries: 30
 

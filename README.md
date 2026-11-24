@@ -2,10 +2,13 @@
 
 A Spring Boot service that simulates event outcome handling and bet settlement:
 
+For a short interview walkthrough, see [DEMO.md](DEMO.md).
+
 1. `POST /api/event-outcomes` publishes an event outcome to the Kafka topic `event-outcomes`.
 2. A Kafka consumer reads the outcome and finds the **pending** bets of that event in an in-memory H2 database.
 3. One settlement request per bet is sent to the RocketMQ topic `bet-settlements`.
-4. A RocketMQ consumer settles each bet: **WON** if the bet's `eventWinnerId` equals the outcome's winner, otherwise **LOST**.
+4. A RocketMQ consumer settles each bet: **WON** if the bet's `eventWinnerId` equals the outcome's winner, otherwise
+   **LOST**.
 
 ```mermaid
 flowchart TD
@@ -26,17 +29,18 @@ flowchart TD
 
 ## Tech stack
 
-| Concern  | Choice |
-|----------|--------|
-| Runtime  | Java 25, Spring Boot 4.1.2, Maven wrapper |
-| Kafka    | `spring-boot-starter-kafka` (spring-kafka 4.1, Jackson 3 JSON serde), broker `apache/kafka:4.2.2` (KRaft) |
-| RocketMQ | `rocketmq-client-java` 5.2.2 (gRPC client, through the proxy), broker `apache/rocketmq:5.5.0` |
-| Storage  | H2 in-memory with Spring Data JPA |
-| API docs | springdoc-openapi 3.2 (Swagger UI) |
-| Boilerplate | Lombok (loggers, constructor injection, JPA entity accessors) |
-| Tests    | JUnit 5, Mockito, MockMvc, Testcontainers 2 (Kafka and RocketMQ), Awaitility |
+| Concern     | Choice                                                                                                    |
+|-------------|-----------------------------------------------------------------------------------------------------------|
+| Runtime     | Java 25, Spring Boot 4.1.2, Maven wrapper                                                                 |
+| Kafka       | `spring-boot-starter-kafka` (spring-kafka 4.1, Jackson 3 JSON serde), broker `apache/kafka:4.2.2` (KRaft) |
+| RocketMQ    | `rocketmq-client-java` 5.2.2 (gRPC client, through the proxy), broker `apache/rocketmq:5.5.0`             |
+| Storage     | H2 in-memory with Spring Data JPA                                                                         |
+| API docs    | springdoc-openapi 3.2 (Swagger UI)                                                                        |
+| Boilerplate | Lombok (loggers, constructor injection, JPA entity accessors)                                             |
+| Tests       | JUnit 5, Mockito, MockMvc, Testcontainers 2 (Kafka and RocketMQ), Awaitility                              |
 
-The RocketMQ Spring Boot starter is not used: its latest release (2.3.6) targets Spring Boot 2.7 and Jackson 2. The plain gRPC client
+The RocketMQ Spring Boot starter is not used: its latest release (2.3.6) targets Spring Boot 2.7 and Jackson 2. The
+plain gRPC client
 has no dependency conflicts with Boot 4. `RocketMqConfig` wires its producer and push consumer as beans.
 
 ## Prerequisites
@@ -67,7 +71,8 @@ With real RocketMQ (default profile):
 ./mvnw spring-boot:run
 ```
 
-With RocketMQ mocked (`mock` profile): the producer logs the payload and hands it to the settlement logic in-process. Only Kafka is needed:
+With RocketMQ mocked (`mock` profile): the producer logs the payload and hands it to the settlement logic in-process.
+Only Kafka is needed:
 
 ```bash
 docker compose up -d kafka
@@ -86,8 +91,8 @@ On startup, five pending bets are seeded (disable with `-Dspring-boot.run.argume
 
 ### 3. Try it
 
-Open [`http/bet-settlement.http`](http/bet-settlement.http) in IntelliJ IDEA (HTTP Client) or in VS Code / Cursor
-(REST Client extension) and run the requests from top to bottom. Each request has a comment with the expected result:
+Open [`http/bet-settlement.http`](http/bet-settlement.http) in IntelliJ IDEA (HTTP Client) or in VS Code / Cursor (REST
+Client extension) and run the requests from top to bottom. Each request has a comment with the expected result:
 the happy path for the seeded bets, a bet you place yourself, and the error cases.
 
 The main steps with curl:
@@ -130,12 +135,12 @@ docker compose down
 
 ## API
 
-| Method | Path                    | Description |
-|--------|-------------------------|-------------|
-| POST   | `/api/event-outcomes`   | Publish `{eventId, eventName, eventWinnerId}` to Kafka. `202` on broker ack, `400` on invalid body, `503` if Kafka is unreachable. |
-| GET    | `/api/bets`             | List bets, optional filters `eventId` and `status` (`PENDING`, `WON`, `LOST`). |
-| GET    | `/api/bets/{id}`        | One bet, `404` if unknown. |
-| POST   | `/api/bets`             | Place a bet `{userId, eventId, eventMarketId, eventWinnerId, amount}`. `201` with `Location`, `400` on invalid body. |
+| Method | Path                  | Description                                                                                                                        |
+|--------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| POST   | `/api/event-outcomes` | Publish `{eventId, eventName, eventWinnerId}` to Kafka. `202` on broker ack, `400` on invalid body, `503` if Kafka is unreachable. |
+| GET    | `/api/bets`           | List bets, optional filters `eventId` and `status` (`PENDING`, `WON`, `LOST`).                                                     |
+| GET    | `/api/bets/{id}`      | One bet, `404` if unknown.                                                                                                         |
+| POST   | `/api/bets`           | Place a bet `{userId, eventId, eventMarketId, eventWinnerId, amount}`. `201` with `Location`, `400` on invalid body.               |
 
 Errors use RFC 9457 problem details; validation errors list the failing fields under `errors`.
 
@@ -148,7 +153,8 @@ Errors use RFC 9457 problem details; validation errors list the failing fields u
 This is the same command that CI runs (`.github/workflows/ci.yml`). The brokers from `docker-compose.yml` are not
 needed: the end-to-end tests start their own containers.
 
-- Unit tests: the settlement rule in `Bet`, matching and settling services, and the RocketMQ consumer's acknowledge-or-retry decisions.
+- Unit tests: the settlement rule in `Bet`, matching and settling services, and the RocketMQ consumer's
+  acknowledge-or-retry decisions.
 - Web slice test: validation and error mapping of `POST /api/event-outcomes`.
 - End-to-end tests: they post an outcome and wait until the bets are settled, with real Kafka in Testcontainers.
   `RocketMqBetSettlementFlowTest` runs the default profile against a real RocketMQ broker: the name server, the broker
@@ -174,15 +180,18 @@ config/              Clock, topic and RocketMQ properties, Kafka topic and error
 ```
 
 The REST controllers and both message listeners are entry points that call the services. The services use
-`persistence` and the message publishers. The JPA entity is kept separate from the domain `Bet`, so the settlement rule has no
+`persistence` and the message publishers. The JPA entity is kept separate from the domain `Bet`, so the settlement rule
+has no
 framework code. `BetSettlementPublisher` is the only interface: it has a real RocketMQ implementation and an in-process
 one, so switching to the mock is a profile choice.
 
 ### Messages
 
-- `event-outcomes` (Kafka): JSON `{"eventId","eventName","eventWinnerId"}`, keyed by `eventId`, so all outcomes of one event
+- `event-outcomes` (Kafka): JSON `{"eventId","eventName","eventWinnerId"}`, keyed by `eventId`, so all outcomes of one
+  event
   stay ordered on one partition. The app creates the topic (3 partitions) on startup.
-- `bet-settlements` (RocketMQ): one message per bet, JSON `{"betId","eventId","outcomeWinnerId"}`, message key = `betId`,
+- `bet-settlements` (RocketMQ): one message per bet, JSON `{"betId","eventId","outcomeWinnerId"}`, message key =
+  `betId`,
   tag `SETTLE`. The message carries the outcome winner, not the result: the consumer settles the bet through
   `Bet.settle`, so the WON/LOST rule lives in one place, the domain.
 
@@ -193,7 +202,8 @@ Both brokers deliver at least once, so every step is idempotent:
 - Matching only picks bets that are still `PENDING`. If a repeated outcome arrives before the first settlements finish,
   matching can publish duplicate requests; settlement idempotency (next bullet) makes those duplicates safe. Once every
   bet is settled, a further outcome publishes nothing.
-- Settlement skips a bet that is already settled. Concurrent duplicates are caught by JPA optimistic locking (`@Version`);
+- Settlement skips a bet that is already settled. Concurrent duplicates are caught by JPA optimistic locking
+  (`@Version`);
   the losing message is retried and then skipped.
 - Kafka listener: transient failures are retried 3 times, 1 second apart, then logged and skipped. Malformed JSON and
   invalid payloads are not retried.
@@ -204,7 +214,8 @@ Both brokers deliver at least once, so every step is idempotent:
 ## Assumptions and trade-offs
 
 - **No payout.** A bet has no odds, so settlement records only `WON`/`LOST` and `settledAt`.
-- **`eventMarketId` is stored but not used for matching.** The outcome message carries no market, so bets are matched by `eventId` alone.
+- **`eventMarketId` is stored but not used for matching.** The outcome message carries no market, so bets are matched by
+  `eventId` alone.
 - **No transactional outbox.** If the app crashes after reading bets but before every RocketMQ message is sent, the
   Kafka offset is not committed and the outcome is reprocessed. The idempotency rules above make that safe, but there
   is no atomic "DB + broker" guarantee. An outbox table would close that gap.
@@ -212,5 +223,6 @@ Both brokers deliver at least once, so every step is idempotent:
   `DeadLetterPublishingRecoverer` would be a one-line addition.
 - **H2 is in-memory.** Data, including seeded bets, resets on every restart.
 - **Single-node brokers.** Replication factor 1 and no security, for local use only.
-- **Shutdown.** The RocketMQ push consumer's `close()` waits for its in-flight long-poll (about 30 seconds). It is capped at 5 seconds,
+- **Shutdown.** The RocketMQ push consumer's `close()` waits for its in-flight long-poll (about 30 seconds). It is
+  capped at 5 seconds,
   and unacknowledged messages are redelivered.

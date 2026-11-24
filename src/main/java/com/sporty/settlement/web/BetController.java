@@ -5,9 +5,6 @@ import com.sporty.settlement.domain.BetStatus;
 import com.sporty.settlement.service.BetService;
 import com.sporty.settlement.web.dto.BetResponse;
 import com.sporty.settlement.web.dto.CreateBetRequest;
-import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,28 +16,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
+import java.net.URI;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/bets")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class BetController {
 
-  private final BetService betService;
+    private final BetService betService;
 
-  @GetMapping
-  List<BetResponse> find(
-      @RequestParam(required = false) String eventId,
-      @RequestParam(required = false) BetStatus status) {
-    return betService.find(eventId, status).stream().map(BetResponse::from).toList();
-  }
+    @GetMapping
+    List<BetResponse> find(
+        @RequestParam(required = false) String eventId,
+        @RequestParam(required = false) BetStatus status) {
+        return betService.find(eventId, status).stream().map(BetResponse::from).toList();
+    }
 
-  @GetMapping("/{id}")
-  BetResponse getById(@PathVariable Long id) {
-    return BetResponse.from(betService.getById(id));
-  }
+    @GetMapping("/{id}")
+    BetResponse getById(@PathVariable Long id) {
+        return BetResponse.from(betService.getById(id));
+    }
 
-  @PostMapping
-  ResponseEntity<BetResponse> create(@Valid @RequestBody CreateBetRequest request) {
-    Bet bet = betService.create(request.toCommand());
-    return ResponseEntity.created(URI.create("/api/bets/" + bet.id())).body(BetResponse.from(bet));
-  }
+    @PostMapping
+    ResponseEntity<BetResponse> create(@Valid @RequestBody CreateBetRequest request) {
+        Bet bet = betService.create(request.toCommand());
+        return ResponseEntity.created(URI.create("/api/bets/" + bet.id())).body(BetResponse.from(bet));
+    }
 }

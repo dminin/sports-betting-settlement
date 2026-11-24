@@ -23,18 +23,18 @@ import tools.jackson.databind.json.JsonMapper;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class InProcessBetSettlementPublisher implements BetSettlementPublisher {
 
-  private final SettleBetService settleBetService;
-  private final JsonMapper jsonMapper;
+    private final SettleBetService settleBetService;
+    private final JsonMapper jsonMapper;
 
-  @Override
-  public void publish(BetSettlementCommand command) {
-    log.info(
-        "[mock RocketMQ] bet-settlements <- {}",
-        jsonMapper.writeValueAsString(BetSettlementMessage.from(command)));
-    try {
-      settleBetService.settle(command);
-    } catch (RuntimeException e) {
-      log.error("[mock RocketMQ] settlement of bet {} failed", command.betId(), e);
+    @Override
+    public void publish(BetSettlementCommand command) {
+        log.info(
+            "[mock RocketMQ] bet-settlements <- {}",
+            jsonMapper.writeValueAsString(BetSettlementMessage.from(command)));
+        try {
+            settleBetService.settle(command);
+        } catch (RuntimeException e) {
+            log.error("[mock RocketMQ] settlement of bet {} failed", command.betId(), e);
+        }
     }
-  }
 }

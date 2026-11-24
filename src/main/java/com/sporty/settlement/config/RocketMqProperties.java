@@ -5,9 +5,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Configuration for the RocketMQ settlement channel.
  *
- * @param endpoint gRPC endpoint of the RocketMQ proxy, e.g. {@code localhost:8081}
- * @param topic topic carrying bet settlement requests
+ * @param endpoint      gRPC endpoint of the RocketMQ proxy, e.g. {@code localhost:8081}
+ * @param topic         topic carrying bet settlement requests
  * @param consumerGroup consumer group of the settlement consumer
  */
 @ConfigurationProperties("app.rocketmq")
-public record RocketMqProperties(String endpoint, String topic, String consumerGroup) {}
+public record RocketMqProperties(String endpoint, String topic, String consumerGroup) {
+}
