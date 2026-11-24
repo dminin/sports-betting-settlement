@@ -53,10 +53,11 @@ abstract class AbstractBetSettlementFlowTest {
     }
 
     @Test
-    void publishedOutcomeSettlesPendingBetsOfTheEvent() throws Exception {
-        createBet("user-a", "EVT-IT-1", "TEAM-X");
-        createBet("user-b", "EVT-IT-1", "TEAM-Y");
-        createBet("user-c", "EVT-IT-2", "TEAM-X");
+    void publishedOutcomeSettlesPendingBetsOfTheEventMarket() throws Exception {
+        createBet("user-a", "EVT-IT-1", "MKT-1", "TEAM-X");
+        createBet("user-b", "EVT-IT-1", "MKT-1", "TEAM-Y");
+        createBet("user-c", "EVT-IT-1", "MKT-2", "TEAM-X");
+        createBet("user-d", "EVT-IT-2", "MKT-1", "TEAM-X");
 
         mockMvc
             .perform(
@@ -64,7 +65,8 @@ abstract class AbstractBetSettlementFlowTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
-                            {"eventId":"EVT-IT-1","eventName":"X vs Y","eventWinnerId":"TEAM-X"}\
+                            {"eventId":"EVT-IT-1","eventMarketId":"MKT-1","eventName":"X vs Y",
+                             "eventWinnerId":"TEAM-X"}\
                             """))
             .andExpect(status().isAccepted());
 
@@ -73,27 +75,30 @@ abstract class AbstractBetSettlementFlowTest {
             .untilAsserted(() -> {
                 Map<String, Bet> betsByUser = byUser(betService.find("EVT-IT-1", null));
                 assertThat(betsByUser.get("user-a").status()).isEqualTo(BetStatus.WON);
+                assertThat(betsByUser.get("user-a").settledAt()).isNotNull();
                 assertThat(betsByUser.get("user-b").status()).isEqualTo(BetStatus.LOST);
-                assertThat(betsByUser.values())
-                    .allSatisfy(bet -> assertThat(bet.settledAt()).isNotNull());
+                assertThat(betsByUser.get("user-b").settledAt()).isNotNull();
             });
+        assertThat(byUser(betService.find("EVT-IT-1", null)).get("user-c").status())
+            .isEqualTo(BetStatus.PENDING);
         assertThat(betService.find("EVT-IT-2", null))
             .singleElement()
             .extracting(Bet::status)
             .isEqualTo(BetStatus.PENDING);
     }
 
-    private void createBet(String userId, String eventId, String winnerId) throws Exception {
+    private void createBet(String userId, String eventId, String marketId, String winnerId)
+        throws Exception {
         mockMvc
             .perform(
                 post("/api/bets")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
                         """
-                            {"userId":"%s","eventId":"%s","eventMarketId":"MKT-1",
+                            {"userId":"%s","eventId":"%s","eventMarketId":"%s",
                              "eventWinnerId":"%s","amount":10.00}\
                             """
-                            .formatted(userId, eventId, winnerId)))
+                            .formatted(userId, eventId, marketId, winnerId)))
             .andExpect(status().isCreated());
     }
 }

@@ -23,6 +23,9 @@ public class PublishEventOutcomeService {
     public void publish(EventOutcome outcome) {
         eventOutcomePublisher.publish(outcome);
         log.info(
-            "Published outcome of event {} (winner {})", outcome.eventId(), outcome.eventWinnerId());
+            "Published outcome of event {} market {} (winner {})",
+            outcome.eventId(),
+            outcome.eventMarketId(),
+            outcome.eventWinnerId());
     }
 }

@@ -5,7 +5,8 @@ Bet settlement service for a backend home assignment. The spec is
 structure, so clean design matters more than features. `README.md` is the human guide: run steps, API, design and
 accepted trade-offs.
 
-Flow: `POST /api/event-outcomes` -> Kafka `event-outcomes` -> `MatchBetsService` -> `BetSettlementPublisher` -> RocketMQ
+Flow: `POST /api/event-outcomes` -> Kafka `event-outcomes` -> `MatchBetsService` (pending bets of the outcome's event
+and market) -> `BetSettlementPublisher` -> RocketMQ
 `bet-settlements` -> `SettleBetService` (WON if the bet's `eventWinnerId` equals the outcome winner, else LOST).
 
 ## Commands

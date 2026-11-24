@@ -23,7 +23,10 @@ import java.time.Instant;
 @Entity
 @Table(
     name = "bets",
-    indexes = @Index(name = "idx_bets_event_status", columnList = "event_id, status"))
+    indexes =
+        @Index(
+            name = "idx_bets_event_market_status",
+            columnList = "event_id, event_market_id, status"))
 @Getter(AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)

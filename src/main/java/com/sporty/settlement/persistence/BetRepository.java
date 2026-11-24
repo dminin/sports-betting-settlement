@@ -34,10 +34,13 @@ public class BetRepository {
     }
 
     /**
-     * Finds pending bets for an event in identifier order.
+     * Finds pending bets on one market of an event in identifier order.
      */
-    public List<Bet> findPendingByEventId(String eventId) {
-        return jpaRepository.findByEventIdAndStatusOrderById(eventId, BetStatus.PENDING).stream()
+    public List<Bet> findPending(String eventId, String eventMarketId) {
+        return jpaRepository
+            .findByEventIdAndEventMarketIdAndStatusOrderById(
+                eventId, eventMarketId, BetStatus.PENDING)
+            .stream()
             .map(BetEntityMapper::toDomain)
             .toList();
     }

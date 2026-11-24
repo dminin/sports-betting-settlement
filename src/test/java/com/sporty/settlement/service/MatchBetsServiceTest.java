@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class MatchBetsServiceTest {
 
-    private static final EventOutcome OUTCOME = new EventOutcome("EVT-1", "A vs B", "TEAM-A");
+    private static final EventOutcome OUTCOME = new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A");
 
     @Mock
     private BetRepository betRepository;
@@ -49,7 +49,7 @@ class MatchBetsServiceTest {
 
     @Test
     void publishesOneSettlementRequestPerPendingBet() {
-        given(betRepository.findPendingByEventId("EVT-1"))
+        given(betRepository.findPending("EVT-1", "MKT-1"))
             .willReturn(List.of(pendingBet(1L), pendingBet(2L)))
             .willReturn(List.of());
 

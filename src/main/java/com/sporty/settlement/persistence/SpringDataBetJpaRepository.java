@@ -9,7 +9,8 @@ import java.util.List;
 
 interface SpringDataBetJpaRepository extends JpaRepository<BetJpaEntity, Long> {
 
-    List<BetJpaEntity> findByEventIdAndStatusOrderById(String eventId, BetStatus status);
+    List<BetJpaEntity> findByEventIdAndEventMarketIdAndStatusOrderById(
+        String eventId, String eventMarketId, BetStatus status);
 
     @Query(
         """

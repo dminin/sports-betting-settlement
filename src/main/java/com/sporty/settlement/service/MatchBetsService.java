@@ -22,14 +22,16 @@ public class MatchBetsService {
     private final BetSettlementPublisher betSettlementPublisher;
 
     /**
-     * Publishes one settlement request for each pending bet on the outcome's event.
+     * Publishes one settlement request for each pending bet on the outcome's event and market.
      */
     public void requestSettlements(EventOutcome outcome) {
-        List<Bet> pendingBets = betRepository.findPendingByEventId(outcome.eventId());
+        List<Bet> pendingBets =
+            betRepository.findPending(outcome.eventId(), outcome.eventMarketId());
         pendingBets.forEach(bet -> betSettlementPublisher.publish(outcome.settlementCommandFor(bet)));
         log.info(
-            "Requested settlement of {} pending bets for event {}",
+            "Requested settlement of {} pending bets for event {} market {}",
             pendingBets.size(),
-            outcome.eventId());
+            outcome.eventId(),
+            outcome.eventMarketId());
     }
 }
