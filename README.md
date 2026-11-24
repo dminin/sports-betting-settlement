@@ -7,7 +7,8 @@ For a short interview walkthrough, see [DEMO.md](DEMO.md).
 1. `POST /api/event-outcomes` publishes the outcome of one market of an event to the Kafka topic `event-outcomes`.
 2. A Kafka consumer reads the outcome and finds the **pending** bets on that event and market in an in-memory H2
    database.
-3. One settlement request per bet is sent to the RocketMQ topic `bet-settlements`.
+3. In the same database transaction, one settlement request per bet is written to the `settlement_outbox` table.
+   A scheduled relay sends each request to the RocketMQ topic `bet-settlements`, then deletes the row.
 4. A RocketMQ consumer settles each bet: **WON** if the bet's `eventWinnerId` equals the outcome's winner, otherwise
    **LOST**.
 
@@ -20,7 +21,9 @@ flowchart TD
   kafkaTopic --> kafkaIn[EventOutcomeKafkaListener]
   kafkaIn --> matchSvc[MatchBetsService]
   matchSvc --> repo[(H2 bets)]
-  matchSvc --> rmqOut[BetSettlementPublisher interface]
+  matchSvc --> outbox[(H2 settlement_outbox)]
+  outbox --> relay[SettlementOutboxRelay]
+  relay --> rmqOut[BetSettlementPublisher interface]
   rmqOut -->|default| rmqTopic[("RocketMQ bet-settlements")]
   rmqOut -->|mock profile| settleSvc
   rmqTopic --> rmqIn[BetSettlementRocketMqConsumer]
@@ -173,11 +176,14 @@ messaging/           Shared messaging exception
 messaging/kafka/     event-outcomes publisher and listener
 messaging/rocketmq/  bet-settlements publisher (real), in-process publisher (mock profile), push consumer
 messaging/dto/       Wire contracts of both topics
-service/             Publish outcome, match bets, settle bet, query and create bets; BetSettlementPublisher
+service/             Publish outcome, match bets, outbox relay, settle bet, query and create bets;
+                     BetSettlementPublisher
 service/dto/         Service input (CreateBetCommand)
-persistence/         BetRepository; the JPA entity, Spring Data repository and mapper stay package-private
+persistence/         BetRepository, SettlementOutboxRepository, OutboxEntry; the JPA entities, Spring Data
+                     repositories and mapper stay package-private
 domain/              Bet (settlement rule), BetStatus, EventOutcome, BetSettlementCommand. No framework code.
-config/              Clock, topic and RocketMQ properties, Kafka topic and error handler, RocketMQ clients, seed data
+config/              Clock, topic, RocketMQ and outbox properties, Kafka topic and error handler, RocketMQ clients,
+                     scheduling, seed data
 ```
 
 The REST controllers and both message listeners are entry points that call the services. The services use
@@ -200,8 +206,8 @@ one, so switching to the mock is a profile choice.
 Both brokers deliver at least once, so every step is idempotent:
 
 - Matching only picks bets that are still `PENDING`. If a repeated outcome arrives before the first settlements finish,
-  matching can publish duplicate requests; settlement idempotency (next bullet) makes those duplicates safe. Once every
-  bet is settled, a further outcome publishes nothing.
+  matching can write duplicate requests to the outbox; settlement idempotency (next bullet) makes those duplicates
+  safe. Once every bet is settled, a further outcome writes nothing.
 - Settlement skips a bet that is already settled. Concurrent duplicates are caught by JPA optimistic locking
   (`@Version`);
   the losing message is retried and then skipped.
@@ -209,7 +215,11 @@ Both brokers deliver at least once, so every step is idempotent:
   invalid payloads are not retried.
 - RocketMQ listener: transient failures return `FAILURE`, so the broker redelivers and eventually moves the message to
   the consumer group's DLQ. Messages that can never succeed (malformed, unknown bet) are logged and acknowledged.
-- The matching step holds no database transaction while it talks to the broker.
+- Transactional outbox: matching reads the pending bets and inserts the outbox rows in one transaction, so a crash
+  cannot lose a request. The relay (`SettlementOutboxRelay`, every `app.outbox.poll-interval`, up to
+  `app.outbox.batch-size` rows) has no transaction open while it talks to the broker. It deletes a row only after the
+  send succeeds. If a send fails, the relay stops the run and retries the same row on the next poll, so the order
+  stays FIFO. A crash between send and delete sends the request again, which settlement idempotency makes safe.
 
 ## Assumptions and trade-offs
 
@@ -217,9 +227,9 @@ Both brokers deliver at least once, so every step is idempotent:
 - **The outcome names one market.** The spec's outcome has no market. This service requires `eventMarketId` on the
   outcome, so the result of one market (for example match winner) cannot settle bets on another market of the same
   event. The settlement message does not carry the market: matching already selects the bets of that market.
-- **No transactional outbox.** If the app crashes after reading bets but before every RocketMQ message is sent, the
-  Kafka offset is not committed and the outcome is reprocessed. The idempotency rules above make that safe, but there
-  is no atomic "DB + broker" guarantee. An outbox table would close that gap.
+- **Polling outbox relay.** The relay polls the table; it does not use change data capture. Delivery is at least
+  once, not exactly once. With more than one app instance, two relays can send the same row; settlement idempotency
+  makes that safe, and a row lock (`SELECT ... FOR UPDATE SKIP LOCKED`) would remove the duplicate work.
 - **No Kafka dead-letter topic.** Records that still fail after retries are logged and skipped. A
   `DeadLetterPublishingRecoverer` would be a one-line addition.
 - **H2 is in-memory.** Data, including seeded bets, resets on every restart.

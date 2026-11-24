@@ -42,6 +42,9 @@ app:
     endpoint: localhost:8081
     topic: bet-settlements
     consumer-group: bet-settlement-consumer
+  outbox:
+    poll-interval: 500ms
+    batch-size: 100
   seed:
     enabled: true
 

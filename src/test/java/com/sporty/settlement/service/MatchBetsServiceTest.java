@@ -5,6 +5,7 @@ import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.domain.BetStatus;
 import com.sporty.settlement.domain.EventOutcome;
 import com.sporty.settlement.persistence.BetRepository;
+import com.sporty.settlement.persistence.SettlementOutboxRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,10 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,7 +27,7 @@ class MatchBetsServiceTest {
     private BetRepository betRepository;
 
     @Mock
-    private BetSettlementPublisher betSettlementPublisher;
+    private SettlementOutboxRepository outboxRepository;
 
     @InjectMocks
     private MatchBetsService matchBetsService;
@@ -48,17 +46,25 @@ class MatchBetsServiceTest {
     }
 
     @Test
-    void publishesOneSettlementRequestPerPendingBet() {
+    void storesOneSettlementRequestPerPendingBetInTheOutbox() {
         given(betRepository.findPending("EVT-1", "MKT-1"))
-            .willReturn(List.of(pendingBet(1L), pendingBet(2L)))
-            .willReturn(List.of());
+            .willReturn(List.of(pendingBet(1L), pendingBet(2L)));
 
         matchBetsService.requestSettlements(OUTCOME);
-        verify(betSettlementPublisher).publish(new BetSettlementCommand(1L, "EVT-1", "TEAM-A"));
-        verify(betSettlementPublisher).publish(new BetSettlementCommand(2L, "EVT-1", "TEAM-A"));
 
-        clearInvocations(betSettlementPublisher);
+        verify(outboxRepository)
+            .add(
+                List.of(
+                    new BetSettlementCommand(1L, "EVT-1", "TEAM-A"),
+                    new BetSettlementCommand(2L, "EVT-1", "TEAM-A")));
+    }
+
+    @Test
+    void storesNoRequestWhenNoBetIsPending() {
+        given(betRepository.findPending("EVT-1", "MKT-1")).willReturn(List.of());
+
         matchBetsService.requestSettlements(OUTCOME);
-        verify(betSettlementPublisher, never()).publish(any());
+
+        verify(outboxRepository).add(List.of());
     }
 }

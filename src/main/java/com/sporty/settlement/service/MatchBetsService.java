@@ -1,36 +1,40 @@
 package com.sporty.settlement.service;
 
-import com.sporty.settlement.domain.Bet;
+import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.domain.EventOutcome;
 import com.sporty.settlement.persistence.BetRepository;
+import com.sporty.settlement.persistence.SettlementOutboxRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Not transactional on purpose: no database transaction is held open while talking to the broker.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class MatchBetsService {
 
     private final BetRepository betRepository;
-    private final BetSettlementPublisher betSettlementPublisher;
+    private final SettlementOutboxRepository outboxRepository;
 
     /**
-     * Publishes one settlement request for each pending bet on the outcome's event and market.
+     * Stores one settlement request in the outbox for each pending bet on the outcome's event and
+     * market. {@link SettlementOutboxRelay} publishes the requests later. A repeated outcome can store
+     * a second request for a bet that is not settled yet; settlement is idempotent.
      */
+    @Transactional
     public void requestSettlements(EventOutcome outcome) {
-        List<Bet> pendingBets =
-            betRepository.findPending(outcome.eventId(), outcome.eventMarketId());
-        pendingBets.forEach(bet -> betSettlementPublisher.publish(outcome.settlementCommandFor(bet)));
+        List<BetSettlementCommand> commands =
+            betRepository.findPending(outcome.eventId(), outcome.eventMarketId()).stream()
+                .map(outcome::settlementCommandFor)
+                .toList();
+        outboxRepository.add(commands);
         log.info(
-            "Requested settlement of {} pending bets for event {} market {}",
-            pendingBets.size(),
+            "Stored {} settlement requests in the outbox for event {} market {}",
+            commands.size(),
             outcome.eventId(),
             outcome.eventMarketId());
     }
