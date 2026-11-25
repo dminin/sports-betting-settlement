@@ -3,9 +3,7 @@ package com.sporty.settlement.service;
 import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.messaging.MessagePublishingException;
 
-/**
- * Publishes requests to settle individual bets.
- */
+/** Publishes requests to settle individual bets. */
 public interface BetSettlementPublisher {
 
     /**

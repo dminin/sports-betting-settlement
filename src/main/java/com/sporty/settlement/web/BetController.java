@@ -30,8 +30,8 @@ class BetController {
 
     @GetMapping
     List<BetResponse> find(
-        @RequestParam(required = false) String eventId,
-        @RequestParam(required = false) BetStatus status) {
+            @RequestParam(required = false) String eventId,
+            @RequestParam(required = false) BetStatus status) {
         return betService.find(eventId, status).stream().map(BetResponse::from).toList();
     }
 
@@ -43,6 +43,7 @@ class BetController {
     @PostMapping
     ResponseEntity<BetResponse> create(@Valid @RequestBody CreateBetRequest request) {
         Bet bet = betService.create(request.toCommand());
-        return ResponseEntity.created(URI.create("/api/bets/" + bet.id())).body(BetResponse.from(bet));
+        return ResponseEntity.created(URI.create("/api/bets/" + bet.id()))
+                .body(BetResponse.from(bet));
     }
 }

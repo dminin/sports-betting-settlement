@@ -21,42 +21,40 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class MatchBetsServiceTest {
 
-    private static final EventOutcome OUTCOME = new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A");
+    private static final EventOutcome OUTCOME =
+            new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A");
 
-    @Mock
-    private BetRepository betRepository;
+    @Mock private BetRepository betRepository;
 
-    @Mock
-    private SettlementOutboxRepository outboxRepository;
+    @Mock private SettlementOutboxRepository outboxRepository;
 
-    @InjectMocks
-    private MatchBetsService matchBetsService;
+    @InjectMocks private MatchBetsService matchBetsService;
 
     private static Bet pendingBet(Long id) {
         return Bet.restore(
-            id,
-            "user-" + id,
-            "EVT-1",
-            "MKT-1",
-            "TEAM-B",
-            new BigDecimal("5.00"),
-            BetStatus.PENDING,
-            null,
-            0L);
+                id,
+                "user-" + id,
+                "EVT-1",
+                "MKT-1",
+                "TEAM-B",
+                new BigDecimal("5.00"),
+                BetStatus.PENDING,
+                null,
+                0L);
     }
 
     @Test
     void storesOneSettlementRequestPerPendingBetInTheOutbox() {
         given(betRepository.findPending("EVT-1", "MKT-1"))
-            .willReturn(List.of(pendingBet(1L), pendingBet(2L)));
+                .willReturn(List.of(pendingBet(1L), pendingBet(2L)));
 
         matchBetsService.requestSettlements(OUTCOME);
 
         verify(outboxRepository)
-            .add(
-                List.of(
-                    new BetSettlementCommand(1L, "EVT-1", "TEAM-A"),
-                    new BetSettlementCommand(2L, "EVT-1", "TEAM-A")));
+                .add(
+                        List.of(
+                                new BetSettlementCommand(1L, "EVT-1", "TEAM-A"),
+                                new BetSettlementCommand(2L, "EVT-1", "TEAM-A")));
     }
 
     @Test

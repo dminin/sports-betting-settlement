@@ -9,9 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Stores and queries domain bets through the JPA persistence model.
- */
+/** Stores and queries domain bets through the JPA persistence model. */
 @Repository
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetRepository {
@@ -26,32 +24,30 @@ public class BetRepository {
         return BetEntityMapper.toDomain(jpaRepository.save(BetEntityMapper.toEntity(bet)));
     }
 
-    /**
-     * Finds a bet by its persistent identifier.
-     */
+    /** Finds a bet by its persistent identifier. */
     public Optional<Bet> findById(Long id) {
         return jpaRepository.findById(id).map(BetEntityMapper::toDomain);
     }
 
-    /**
-     * Finds pending bets on one market of an event in identifier order.
-     */
+    /** Finds pending bets on one market of an event in identifier order. */
     public List<Bet> findPending(String eventId, String eventMarketId) {
         return jpaRepository
-            .findByEventIdAndEventMarketIdAndStatusOrderById(
-                eventId, eventMarketId, BetStatus.PENDING)
-            .stream()
-            .map(BetEntityMapper::toDomain)
-            .toList();
+                .findByEventIdAndEventMarketIdAndStatusOrderById(
+                        eventId, eventMarketId, BetStatus.PENDING)
+                .stream()
+                .map(BetEntityMapper::toDomain)
+                .toList();
     }
 
     /**
      * Finds bets that match the supplied optional filters.
      *
      * @param eventId optional, {@code null} matches any event
-     * @param status  optional, {@code null} matches any status
+     * @param status optional, {@code null} matches any status
      */
     public List<Bet> find(String eventId, BetStatus status) {
-        return jpaRepository.search(eventId, status).stream().map(BetEntityMapper::toDomain).toList();
+        return jpaRepository.search(eventId, status).stream()
+                .map(BetEntityMapper::toDomain)
+                .toList();
     }
 }

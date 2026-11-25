@@ -28,31 +28,31 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override
     protected ResponseEntity<Object> handleExceptionInternal(
-        Exception ex,
-        Object body,
-        HttpHeaders headers,
-        HttpStatusCode statusCode,
-        WebRequest request) {
+            Exception ex,
+            Object body,
+            HttpHeaders headers,
+            HttpStatusCode statusCode,
+            WebRequest request) {
         logHandledException(ex, statusCode);
         return super.handleExceptionInternal(ex, body, headers, statusCode, request);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
-        MethodArgumentNotValidException ex,
-        HttpHeaders headers,
-        HttpStatusCode status,
-        WebRequest request) {
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
         ProblemDetail problem = ex.getBody();
         problem.setProperty(
-            "errors",
-            ex.getBindingResult().getFieldErrors().stream()
-                .collect(
-                    Collectors.toMap(
-                        FieldError::getField,
-                        this::messageOf,
-                        (first, second) -> first,
-                        TreeMap::new)));
+                "errors",
+                ex.getBindingResult().getFieldErrors().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        FieldError::getField,
+                                        this::messageOf,
+                                        (first, second) -> first,
+                                        TreeMap::new)));
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
@@ -72,7 +72,8 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handlePublishingFailure(MessagePublishingException ex) {
         logHandledException(ex, HttpStatus.SERVICE_UNAVAILABLE);
         return ProblemDetail.forStatusAndDetail(
-            HttpStatus.SERVICE_UNAVAILABLE, "Message broker is unavailable, please retry later");
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Message broker is unavailable, please retry later");
     }
 
     private void logHandledException(Exception ex, HttpStatusCode statusCode) {

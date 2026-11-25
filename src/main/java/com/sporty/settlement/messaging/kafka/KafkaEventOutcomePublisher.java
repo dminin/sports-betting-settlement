@@ -9,9 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ExecutionException;
 
-/**
- * Sends event outcomes to Kafka and reports broker failures to the service layer.
- */
+/** Sends event outcomes to Kafka and reports broker failures to the service layer. */
 @Component
 public class KafkaEventOutcomePublisher {
 
@@ -19,8 +17,8 @@ public class KafkaEventOutcomePublisher {
     private final String topic;
 
     KafkaEventOutcomePublisher(
-        KafkaTemplate<String, EventOutcomeMessage> kafkaTemplate,
-        EventOutcomesTopicProperties properties) {
+            KafkaTemplate<String, EventOutcomeMessage> kafkaTemplate,
+            EventOutcomesTopicProperties properties) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = properties.eventOutcomesTopic();
     }
@@ -37,9 +35,10 @@ public class KafkaEventOutcomePublisher {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new MessagePublishingException(
-                "Interrupted while publishing outcome of " + outcome.eventId(), e);
+                    "Interrupted while publishing outcome of " + outcome.eventId(), e);
         } catch (ExecutionException e) {
-            throw new MessagePublishingException("Failed to publish outcome of " + outcome.eventId(), e);
+            throw new MessagePublishingException(
+                    "Failed to publish outcome of " + outcome.eventId(), e);
         }
     }
 }

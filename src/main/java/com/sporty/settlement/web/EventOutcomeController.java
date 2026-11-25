@@ -19,9 +19,7 @@ class EventOutcomeController {
 
     private final PublishEventOutcomeService publishEventOutcomeService;
 
-    /**
-     * Publishes the outcome to Kafka. Returns 202 because bets are settled asynchronously.
-     */
+    /** Publishes the outcome to Kafka. Returns 202 because bets are settled asynchronously. */
     @PostMapping
     ResponseEntity<EventOutcomeRequest> publish(@Valid @RequestBody EventOutcomeRequest request) {
         publishEventOutcomeService.publish(request.toDomain());

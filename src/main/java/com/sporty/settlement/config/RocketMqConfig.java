@@ -47,55 +47,54 @@ class RocketMqConfig {
     @Bean
     ClientConfiguration rocketMqClientConfiguration(RocketMqProperties properties) {
         return ClientConfiguration.newBuilder()
-            .setEndpoints(properties.endpoint())
-            .enableSsl(false)
-            .build();
+                .setEndpoints(properties.endpoint())
+                .enableSsl(false)
+                .build();
     }
 
     @Bean
     Producer rocketMqProducer(
-        ClientServiceProvider provider,
-        ClientConfiguration clientConfiguration,
-        RocketMqProperties properties)
-        throws ClientException {
-        return provider
-            .newProducerBuilder()
-            .setClientConfiguration(clientConfiguration)
-            .setTopics(properties.topic())
-            .build();
+            ClientServiceProvider provider,
+            ClientConfiguration clientConfiguration,
+            RocketMqProperties properties)
+            throws ClientException {
+        return provider.newProducerBuilder()
+                .setClientConfiguration(clientConfiguration)
+                .setTopics(properties.topic())
+                .build();
     }
 
     @Bean(destroyMethod = "")
     PushConsumer betSettlementPushConsumer(
-        ClientServiceProvider provider,
-        ClientConfiguration clientConfiguration,
-        RocketMqProperties properties,
-        MessageListener betSettlementListener)
-        throws ClientException {
-        return provider
-            .newPushConsumerBuilder()
-            .setClientConfiguration(clientConfiguration)
-            .setConsumerGroup(properties.consumerGroup())
-            .setSubscriptionExpressions(Map.of(properties.topic(), FilterExpression.SUB_ALL))
-            .setMessageListener(betSettlementListener)
-            .build();
+            ClientServiceProvider provider,
+            ClientConfiguration clientConfiguration,
+            RocketMqProperties properties,
+            MessageListener betSettlementListener)
+            throws ClientException {
+        return provider.newPushConsumerBuilder()
+                .setClientConfiguration(clientConfiguration)
+                .setConsumerGroup(properties.consumerGroup())
+                .setSubscriptionExpressions(Map.of(properties.topic(), FilterExpression.SUB_ALL))
+                .setMessageListener(betSettlementListener)
+                .build();
     }
 
     /**
      * {@link PushConsumer#close()} blocks until the in-flight long-polling receive (~30s) returns.
-     * Bound it so shutdown stays fast; messages received but not acknowledged are redelivered by the
-     * broker.
+     * Bound it so shutdown stays fast; messages received but not acknowledged are redelivered by
+     * the broker.
      */
     @Bean
     DisposableBean betSettlementPushConsumerCloser(PushConsumer betSettlementPushConsumer) {
         return () -> {
             try {
                 CompletableFuture.runAsync(() -> closeQuietly(betSettlementPushConsumer))
-                    .get(CONSUMER_CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                        .get(CONSUMER_CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 log.warn(
-                    "RocketMQ push consumer did not close within {}, abandoning in-flight receive",
-                    CONSUMER_CLOSE_TIMEOUT);
+                        "RocketMQ push consumer did not close within {}, abandoning in-flight"
+                            + " receive",
+                        CONSUMER_CLOSE_TIMEOUT);
             }
         };
     }

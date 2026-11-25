@@ -23,15 +23,15 @@ public final class Bet {
     private Instant settledAt;
 
     private Bet(
-        Long id,
-        String userId,
-        String eventId,
-        String eventMarketId,
-        String eventWinnerId,
-        BigDecimal amount,
-        BetStatus status,
-        Instant settledAt,
-        Long version) {
+            Long id,
+            String userId,
+            String eventId,
+            String eventMarketId,
+            String eventWinnerId,
+            BigDecimal amount,
+            BetStatus status,
+            Instant settledAt,
+            Long version) {
         this.id = id;
         this.userId = requireNonBlank(userId, "userId");
         this.eventId = requireNonBlank(eventId, "eventId");
@@ -43,34 +43,48 @@ public final class Bet {
         this.version = version;
     }
 
-    /**
-     * Creates a new pending bet from a user's validated stake details.
-     */
+    /** Creates a new pending bet from a user's validated stake details. */
     public static Bet place(
-        String userId,
-        String eventId,
-        String eventMarketId,
-        String eventWinnerId,
-        BigDecimal amount) {
+            String userId,
+            String eventId,
+            String eventMarketId,
+            String eventWinnerId,
+            BigDecimal amount) {
         return new Bet(
-            null, userId, eventId, eventMarketId, eventWinnerId, amount, BetStatus.PENDING, null, null);
+                null,
+                userId,
+                eventId,
+                eventMarketId,
+                eventWinnerId,
+                amount,
+                BetStatus.PENDING,
+                null,
+                null);
     }
 
     /**
      * Rebuilds a bet from persisted state; {@code version} is an opaque optimistic-locking token.
      */
     public static Bet restore(
-        Long id,
-        String userId,
-        String eventId,
-        String eventMarketId,
-        String eventWinnerId,
-        BigDecimal amount,
-        BetStatus status,
-        Instant settledAt,
-        Long version) {
+            Long id,
+            String userId,
+            String eventId,
+            String eventMarketId,
+            String eventWinnerId,
+            BigDecimal amount,
+            BetStatus status,
+            Instant settledAt,
+            Long version) {
         return new Bet(
-            id, userId, eventId, eventMarketId, eventWinnerId, amount, status, settledAt, version);
+                id,
+                userId,
+                eventId,
+                eventMarketId,
+                eventWinnerId,
+                amount,
+                status,
+                settledAt,
+                version);
     }
 
     private static BigDecimal requirePositive(BigDecimal amount) {
@@ -93,13 +107,14 @@ public final class Bet {
         }
         if (id != null && !id.equals(command.betId())) {
             throw new IllegalArgumentException(
-                "Settlement targets bet " + command.betId() + ", but this bet is " + id);
+                    "Settlement targets bet " + command.betId() + ", but this bet is " + id);
         }
         if (!eventId.equals(command.eventId())) {
             throw new IllegalArgumentException(
-                "Bet " + id + " belongs to event " + eventId + ", not " + command.eventId());
+                    "Bet " + id + " belongs to event " + eventId + ", not " + command.eventId());
         }
-        this.status = eventWinnerId.equals(command.outcomeWinnerId()) ? BetStatus.WON : BetStatus.LOST;
+        this.status =
+                eventWinnerId.equals(command.outcomeWinnerId()) ? BetStatus.WON : BetStatus.LOST;
         this.settledAt = settledAtValue;
         return true;
     }
@@ -115,44 +130,32 @@ public final class Bet {
         return id;
     }
 
-    /**
-     * Returns the identifier of the user who placed the bet.
-     */
+    /** Returns the identifier of the user who placed the bet. */
     public String userId() {
         return userId;
     }
 
-    /**
-     * Returns the identifier of the event on which the bet was placed.
-     */
+    /** Returns the identifier of the event on which the bet was placed. */
     public String eventId() {
         return eventId;
     }
 
-    /**
-     * Returns the identifier of the event market.
-     */
+    /** Returns the identifier of the event market. */
     public String eventMarketId() {
         return eventMarketId;
     }
 
-    /**
-     * Returns the participant selected to win.
-     */
+    /** Returns the participant selected to win. */
     public String eventWinnerId() {
         return eventWinnerId;
     }
 
-    /**
-     * Returns the user's stake.
-     */
+    /** Returns the user's stake. */
     public BigDecimal amount() {
         return amount;
     }
 
-    /**
-     * Returns the current settlement status.
-     */
+    /** Returns the current settlement status. */
     public BetStatus status() {
         return status;
     }

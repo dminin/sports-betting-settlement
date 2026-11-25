@@ -29,8 +29,8 @@ class InProcessBetSettlementPublisher implements BetSettlementPublisher {
     @Override
     public void publish(BetSettlementCommand command) {
         log.info(
-            "[mock RocketMQ] bet-settlements <- {}",
-            jsonMapper.writeValueAsString(BetSettlementMessage.from(command)));
+                "[mock RocketMQ] bet-settlements <- {}",
+                jsonMapper.writeValueAsString(BetSettlementMessage.from(command)));
         try {
             settleBetService.settle(command);
         } catch (RuntimeException e) {

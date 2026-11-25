@@ -8,9 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-/**
- * Transactional outbox of settlement requests. A row stays until its request is published.
- */
+/** Transactional outbox of settlement requests. A row stays until its request is published. */
 @Repository
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class SettlementOutboxRepository {
@@ -23,12 +21,14 @@ public class SettlementOutboxRepository {
      */
     public void add(List<BetSettlementCommand> commands) {
         jpaRepository.saveAll(
-            commands.stream()
-                .map(
-                    command ->
-                        new SettlementOutboxJpaEntity(
-                            null, command.betId(), command.eventId(), command.outcomeWinnerId()))
-                .toList());
+                commands.stream()
+                        .map(command ->
+                                new SettlementOutboxJpaEntity(
+                                        null,
+                                        command.betId(),
+                                        command.eventId(),
+                                        command.outcomeWinnerId()))
+                        .toList());
     }
 
     /**
@@ -36,18 +36,17 @@ public class SettlementOutboxRepository {
      */
     public List<OutboxEntry> findOldest(int limit) {
         return jpaRepository.findByOrderById(Limit.of(limit)).stream()
-            .map(
-                entity ->
-                    new OutboxEntry(
-                        entity.getId(),
-                        new BetSettlementCommand(
-                            entity.getBetId(), entity.getEventId(), entity.getOutcomeWinnerId())))
-            .toList();
+                .map(entity ->
+                        new OutboxEntry(
+                                entity.getId(),
+                                new BetSettlementCommand(
+                                        entity.getBetId(),
+                                        entity.getEventId(),
+                                        entity.getOutcomeWinnerId())))
+                .toList();
     }
 
-    /**
-     * Removes a published request. Removing an unknown identifier does nothing.
-     */
+    /** Removes a published request. Removing an unknown identifier does nothing. */
     public void remove(Long id) {
         jpaRepository.deleteById(id);
     }

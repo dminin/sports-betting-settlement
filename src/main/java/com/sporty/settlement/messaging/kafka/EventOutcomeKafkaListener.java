@@ -20,14 +20,14 @@ class EventOutcomeKafkaListener {
 
     @KafkaListener(topics = "${app.kafka.event-outcomes-topic}")
     void onEventOutcome(
-        @Payload EventOutcomeMessage message,
-        @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
-        @Header(KafkaHeaders.OFFSET) long offset) {
+            @Payload EventOutcomeMessage message,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset) {
         log.info(
-            "Received outcome of event {} (partition={}, offset={})",
-            message.eventId(),
-            partition,
-            offset);
+                "Received outcome of event {} (partition={}, offset={})",
+                message.eventId(),
+                partition,
+                offset);
         matchBetsService.requestSettlements(message.toDomain());
     }
 }

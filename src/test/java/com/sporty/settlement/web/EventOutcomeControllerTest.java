@@ -21,44 +21,40 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(EventOutcomeController.class)
 class EventOutcomeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
 
-    @MockitoBean
-    private PublishEventOutcomeService publishEventOutcomeService;
+    @MockitoBean private PublishEventOutcomeService publishEventOutcomeService;
 
     @Test
     void acceptsValidOutcome() throws Exception {
-        mockMvc
-            .perform(
-                post("/api/event-outcomes")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                            {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
-                             "eventWinnerId":"TEAM-A"}\
-                            """))
-            .andExpect(status().isAccepted())
-            .andExpect(jsonPath("$.eventId").value("EVT-1"));
+        mockMvc.perform(
+                        post("/api/event-outcomes")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
+                                         "eventWinnerId":"TEAM-A"}\
+                                        """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.eventId").value("EVT-1"));
 
         verify(publishEventOutcomeService)
-            .publish(new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A"));
+                .publish(new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A"));
     }
 
     @Test
     void rejectsOutcomeWithMissingMarketAndWinner() throws Exception {
-        mockMvc
-            .perform(
-                post("/api/event-outcomes")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                            {"eventId":"EVT-1","eventName":"A vs B"}\
-                            """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.status").value(400))
-            .andExpect(jsonPath("$.errors.eventMarketId").exists())
-            .andExpect(jsonPath("$.errors.eventWinnerId").exists());
+        mockMvc.perform(
+                        post("/api/event-outcomes")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"eventId":"EVT-1","eventName":"A vs B"}\
+                                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errors.eventMarketId").exists())
+                .andExpect(jsonPath("$.errors.eventWinnerId").exists());
 
         verify(publishEventOutcomeService, never()).publish(any());
     }
@@ -66,18 +62,17 @@ class EventOutcomeControllerTest {
     @Test
     void returnsServiceUnavailableWhenBrokerIsDown() throws Exception {
         willThrow(new MessagePublishingException("down", null))
-            .given(publishEventOutcomeService)
-            .publish(any());
+                .given(publishEventOutcomeService)
+                .publish(any());
 
-        mockMvc
-            .perform(
-                post("/api/event-outcomes")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        """
-                            {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
-                             "eventWinnerId":"TEAM-A"}\
-                            """))
-            .andExpect(status().isServiceUnavailable());
+        mockMvc.perform(
+                        post("/api/event-outcomes")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
+                                         "eventWinnerId":"TEAM-A"}\
+                                        """))
+                .andExpect(status().isServiceUnavailable());
     }
 }

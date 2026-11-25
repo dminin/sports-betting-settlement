@@ -26,14 +26,22 @@ class SettleBetServiceTest {
 
     private static final Instant NOW = Instant.parse("2026-11-04T12:00:00Z");
     private static final BetSettlementCommand COMMAND =
-        new BetSettlementCommand(1L, "EVT-1", "TEAM-A");
+            new BetSettlementCommand(1L, "EVT-1", "TEAM-A");
 
     private BetRepository betRepository;
     private SettleBetService settleBetService;
 
     private static Bet bet(BetStatus status, Instant settledAt) {
         return Bet.restore(
-            1L, "user-1", "EVT-1", "MKT-1", "TEAM-A", new BigDecimal("10.00"), status, settledAt, 0L);
+                1L,
+                "user-1",
+                "EVT-1",
+                "MKT-1",
+                "TEAM-A",
+                new BigDecimal("10.00"),
+                status,
+                settledAt,
+                0L);
     }
 
     @BeforeEach
@@ -57,7 +65,7 @@ class SettleBetServiceTest {
     @Test
     void skipsBetThatIsAlreadySettled() {
         given(betRepository.findById(1L))
-            .willReturn(Optional.of(bet(BetStatus.LOST, NOW.minusSeconds(60))));
+                .willReturn(Optional.of(bet(BetStatus.LOST, NOW.minusSeconds(60))));
 
         settleBetService.settle(COMMAND);
 
@@ -69,6 +77,6 @@ class SettleBetServiceTest {
         given(betRepository.findById(1L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> settleBetService.settle(COMMAND))
-            .isInstanceOf(BetNotFoundException.class);
+                .isInstanceOf(BetNotFoundException.class);
     }
 }

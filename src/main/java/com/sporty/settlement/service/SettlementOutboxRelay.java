@@ -32,9 +32,9 @@ class SettlementOutboxRelay {
                 betSettlementPublisher.publish(entry.command());
             } catch (MessagePublishingException e) {
                 log.warn(
-                    "Could not publish settlement of bet {}, retrying on the next run",
-                    entry.command().betId(),
-                    e);
+                        "Could not publish settlement of bet {}, retrying on the next run",
+                        entry.command().betId(),
+                        e);
                 return;
             }
             outboxRepository.remove(entry.id());

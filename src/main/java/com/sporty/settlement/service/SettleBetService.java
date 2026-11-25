@@ -11,9 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 
-/**
- * Applies settlement commands to stored bets.
- */
+/** Applies settlement commands to stored bets. */
 @Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -29,12 +27,14 @@ public class SettleBetService {
     @Transactional
     public void settle(BetSettlementCommand command) {
         Bet bet =
-            betRepository
-                .findById(command.betId())
-                .orElseThrow(() -> new BetNotFoundException(command.betId()));
+                betRepository
+                        .findById(command.betId())
+                        .orElseThrow(() -> new BetNotFoundException(command.betId()));
         if (!bet.settle(command, clock.instant())) {
             log.info(
-                "Bet {} is already settled as {}, skipping duplicate settlement", bet.id(), bet.status());
+                    "Bet {} is already settled as {}, skipping duplicate settlement",
+                    bet.id(),
+                    bet.status());
             return;
         }
         betRepository.save(bet);

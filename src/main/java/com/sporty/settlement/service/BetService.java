@@ -11,42 +11,34 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * Provides transactional operations for creating and querying bets.
- */
+/** Provides transactional operations for creating and querying bets. */
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetService {
 
     private final BetRepository betRepository;
 
-    /**
-     * Returns the requested bet or throws when it does not exist.
-     */
+    /** Returns the requested bet or throws when it does not exist. */
     @Transactional(readOnly = true)
     public Bet getById(Long id) {
         return betRepository.findById(id).orElseThrow(() -> new BetNotFoundException(id));
     }
 
-    /**
-     * Finds bets that match the supplied optional event and status filters.
-     */
+    /** Finds bets that match the supplied optional event and status filters. */
     @Transactional(readOnly = true)
     public List<Bet> find(String eventId, BetStatus status) {
         return betRepository.find(eventId, status);
     }
 
-    /**
-     * Places and persists a new pending bet.
-     */
+    /** Places and persists a new pending bet. */
     @Transactional
     public Bet create(CreateBetCommand command) {
         return betRepository.save(
-            Bet.place(
-                command.userId(),
-                command.eventId(),
-                command.eventMarketId(),
-                command.eventWinnerId(),
-                command.amount()));
+                Bet.place(
+                        command.userId(),
+                        command.eventId(),
+                        command.eventMarketId(),
+                        command.eventWinnerId(),
+                        command.amount()));
     }
 }

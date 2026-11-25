@@ -91,8 +91,11 @@ No formatter is configured, so match the code around you.
 - Lombok: `@Slf4j` for loggers, `@RequiredArgsConstructor` for injection, and `@Getter` / `@NoArgsConstructor` /
   `@AllArgsConstructor` on JPA entities. Do not use `@Data`, `@Builder`, `@Value`, `@Setter` or experimental features.
   The domain `Bet` keeps hand-written record-style accessors.
-- Follow Google Java Style: use 2-space indents and lines of up to 100 characters. Put static imports first, then the
-  other imports in alphabetical order, with no wildcards.
+- Follow Google Java Style, but with 4-space indents and 8-space continuation lines, and lines of up to 100
+  characters. Order imports in groups separated by a blank line, each sorted alphabetically: third-party, then
+  `jakarta` / `javax`, then `java`, then static imports. Use no wildcards. Javadoc that contains `{@code}` or
+  `{@link}` must be multi-line. Checkstyle enforces this in the `validate` phase with
+  `src/main/resources/checkstyle/checkstyle.xml`, an adapted `google_checks.xml`.
 - Log with SLF4J `{}` placeholders, and include the ids (`betId`, `eventId`).
 - Write Javadoc only for contracts: null semantics, thrown exceptions, idempotency. Write a comment only for a
   constraint that the code cannot show.

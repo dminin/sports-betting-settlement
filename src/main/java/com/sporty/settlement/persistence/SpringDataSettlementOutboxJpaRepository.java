@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 interface SpringDataSettlementOutboxJpaRepository
-    extends JpaRepository<SettlementOutboxJpaEntity, Long> {
+        extends JpaRepository<SettlementOutboxJpaEntity, Long> {
 
     List<SettlementOutboxJpaEntity> findByOrderById(Limit limit);
 }

@@ -6,19 +6,18 @@ import com.sporty.settlement.domain.EventOutcome;
  * Wire contract of the {@code event-outcomes} Kafka topic.
  */
 public record EventOutcomeMessage(
-    String eventId, String eventMarketId, String eventName, String eventWinnerId) {
+        String eventId, String eventMarketId, String eventName, String eventWinnerId) {
 
-    /**
-     * Creates a wire message from a domain event outcome.
-     */
+    /** Creates a wire message from a domain event outcome. */
     public static EventOutcomeMessage from(EventOutcome outcome) {
         return new EventOutcomeMessage(
-            outcome.eventId(), outcome.eventMarketId(), outcome.eventName(), outcome.eventWinnerId());
+                outcome.eventId(),
+                outcome.eventMarketId(),
+                outcome.eventName(),
+                outcome.eventWinnerId());
     }
 
-    /**
-     * Converts this wire message to a validated domain outcome.
-     */
+    /** Converts this wire message to a validated domain outcome. */
     public EventOutcome toDomain() {
         return new EventOutcome(eventId, eventMarketId, eventName, eventWinnerId);
     }

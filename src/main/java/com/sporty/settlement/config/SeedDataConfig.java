@@ -20,17 +20,37 @@ class SeedDataConfig {
     ApplicationRunner seedBets(BetRepository betRepository) {
         return args -> {
             List<Bet> bets =
-                List.of(
-                    Bet.place(
-                        "user-1", "EVT-1001", "MKT-MATCH-WINNER", "TEAM-RMA", new BigDecimal("25.00")),
-                    Bet.place(
-                        "user-2", "EVT-1001", "MKT-MATCH-WINNER", "TEAM-FCB", new BigDecimal("10.00")),
-                    Bet.place(
-                        "user-3", "EVT-1001", "MKT-MATCH-WINNER", "TEAM-RMA", new BigDecimal("50.00")),
-                    Bet.place(
-                        "user-1", "EVT-2002", "MKT-MATCH-WINNER", "TEAM-LAL", new BigDecimal("15.00")),
-                    Bet.place(
-                        "user-4", "EVT-2002", "MKT-MATCH-WINNER", "TEAM-BOS", new BigDecimal("40.00")));
+                    List.of(
+                            Bet.place(
+                                    "user-1",
+                                    "EVT-1001",
+                                    "MKT-MATCH-WINNER",
+                                    "TEAM-RMA",
+                                    new BigDecimal("25.00")),
+                            Bet.place(
+                                    "user-2",
+                                    "EVT-1001",
+                                    "MKT-MATCH-WINNER",
+                                    "TEAM-FCB",
+                                    new BigDecimal("10.00")),
+                            Bet.place(
+                                    "user-3",
+                                    "EVT-1001",
+                                    "MKT-MATCH-WINNER",
+                                    "TEAM-RMA",
+                                    new BigDecimal("50.00")),
+                            Bet.place(
+                                    "user-1",
+                                    "EVT-2002",
+                                    "MKT-MATCH-WINNER",
+                                    "TEAM-LAL",
+                                    new BigDecimal("15.00")),
+                            Bet.place(
+                                    "user-4",
+                                    "EVT-2002",
+                                    "MKT-MATCH-WINNER",
+                                    "TEAM-BOS",
+                                    new BigDecimal("40.00")));
             bets.forEach(betRepository::save);
             log.info("Seeded {} pending bets for events EVT-1001 and EVT-2002", bets.size());
         };

@@ -28,10 +28,10 @@ class RocketMqBetSettlementPublisher implements BetSettlementPublisher {
     private final String topic;
 
     RocketMqBetSettlementPublisher(
-        Producer producer,
-        ClientServiceProvider provider,
-        JsonMapper jsonMapper,
-        RocketMqProperties properties) {
+            Producer producer,
+            ClientServiceProvider provider,
+            JsonMapper jsonMapper,
+            RocketMqProperties properties) {
         this.producer = producer;
         this.provider = provider;
         this.jsonMapper = jsonMapper;
@@ -41,23 +41,22 @@ class RocketMqBetSettlementPublisher implements BetSettlementPublisher {
     @Override
     public void publish(BetSettlementCommand command) {
         Message message =
-            provider
-                .newMessageBuilder()
-                .setTopic(topic)
-                .setTag(SETTLEMENT_TAG)
-                .setKeys(String.valueOf(command.betId()))
-                .setBody(jsonMapper.writeValueAsBytes(BetSettlementMessage.from(command)))
-                .build();
+                provider.newMessageBuilder()
+                        .setTopic(topic)
+                        .setTag(SETTLEMENT_TAG)
+                        .setKeys(String.valueOf(command.betId()))
+                        .setBody(jsonMapper.writeValueAsBytes(BetSettlementMessage.from(command)))
+                        .build();
         try {
             SendReceipt receipt = producer.send(message);
             log.info(
-                "Sent settlement request for bet {} to {} (messageId={})",
-                command.betId(),
-                topic,
-                receipt.getMessageId());
+                    "Sent settlement request for bet {} to {} (messageId={})",
+                    command.betId(),
+                    topic,
+                    receipt.getMessageId());
         } catch (ClientException e) {
             throw new MessagePublishingException(
-                "Failed to send settlement request for bet " + command.betId(), e);
+                    "Failed to send settlement request for bet " + command.betId(), e);
         }
     }
 }

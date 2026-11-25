@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 class BetSettlementRocketMqConsumerTest {
 
     private static final String VALID_BODY =
-        """
+            """
             {"betId":1,"eventId":"EVT-1","outcomeWinnerId":"TEAM-A"}\
             """;
 
@@ -36,14 +36,16 @@ class BetSettlementRocketMqConsumerTest {
     private static MessageView message(String body) {
         MessageView view = mock(MessageView.class);
         given(view.getBody())
-            .willReturn(ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)).asReadOnlyBuffer());
+                .willReturn(
+                        ByteBuffer.wrap(body.getBytes(StandardCharsets.UTF_8)).asReadOnlyBuffer());
         return view;
     }
 
     @BeforeEach
     void setUp() {
         settleBetService = mock(SettleBetService.class);
-        consumer = new BetSettlementRocketMqConsumer(settleBetService, JsonMapper.builder().build());
+        consumer =
+                new BetSettlementRocketMqConsumer(settleBetService, JsonMapper.builder().build());
     }
 
     @Test
@@ -57,12 +59,12 @@ class BetSettlementRocketMqConsumerTest {
     void acknowledgesPermanentFailures() {
         assertThat(consumer.consume(message("not json"))).isEqualTo(ConsumeResult.SUCCESS);
         assertThat(
-            consumer.consume(
-                message(
-                    """
-                        {"betId":null,"eventId":"EVT-1","outcomeWinnerId":"TEAM-A"}\
-                        """)))
-            .isEqualTo(ConsumeResult.SUCCESS);
+                        consumer.consume(
+                                message(
+                                        """
+                                        {"betId":null,"eventId":"EVT-1","outcomeWinnerId":"TEAM-A"}\
+                                        """)))
+                .isEqualTo(ConsumeResult.SUCCESS);
         verify(settleBetService, never()).settle(any());
 
         willThrow(new BetNotFoundException(1L)).given(settleBetService).settle(any());
@@ -73,13 +75,13 @@ class BetSettlementRocketMqConsumerTest {
     @Test
     void requestsRedeliveryOnTransientFailures() {
         willThrow(new ObjectOptimisticLockingFailureException(Bet.class, 1L))
-            .given(settleBetService)
-            .settle(any());
+                .given(settleBetService)
+                .settle(any());
         assertThat(consumer.consume(message(VALID_BODY))).isEqualTo(ConsumeResult.FAILURE);
 
         willThrow(new IllegalStateException("database unavailable"))
-            .given(settleBetService)
-            .settle(any());
+                .given(settleBetService)
+                .settle(any());
         assertThat(consumer.consume(message(VALID_BODY))).isEqualTo(ConsumeResult.FAILURE);
 
         verify(settleBetService, times(2)).settle(any());

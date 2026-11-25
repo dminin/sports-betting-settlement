@@ -18,28 +18,29 @@ class KafkaConfig {
     @Bean
     NewTopic eventOutcomesTopic(EventOutcomesTopicProperties properties) {
         return TopicBuilder.name(properties.eventOutcomesTopic())
-            .partitions(properties.eventOutcomesPartitions())
-            .replicas(1)
-            .build();
+                .partitions(properties.eventOutcomesPartitions())
+                .replicas(1)
+                .build();
     }
 
     /**
-     * Retries transient failures, then logs and skips the record. Deserialization failures are never
-     * retried (the default), and neither are invalid payloads.
+     * Retries transient failures, then logs and skips the record. Deserialization failures are
+     * never retried (the default), and neither are invalid payloads.
      */
     @Bean
     DefaultErrorHandler kafkaErrorHandler() {
         DefaultErrorHandler errorHandler =
-            new DefaultErrorHandler(
-                (record, ex) ->
-                    log.error(
-                        "Giving up on record topic={} partition={} offset={} key={}",
-                        record.topic(),
-                        record.partition(),
-                        record.offset(),
-                        record.key(),
-                        ex),
-                new FixedBackOff(RETRY_INTERVAL_MS, MAX_RETRIES));
+                new DefaultErrorHandler(
+                        (record, ex) ->
+                                log.error(
+                                        "Giving up on record topic={} partition={} offset={}"
+                                            + " key={}",
+                                        record.topic(),
+                                        record.partition(),
+                                        record.offset(),
+                                        record.key(),
+                                        ex),
+                        new FixedBackOff(RETRY_INTERVAL_MS, MAX_RETRIES));
         errorHandler.addNotRetryableExceptions(IllegalArgumentException.class);
         return errorHandler;
     }

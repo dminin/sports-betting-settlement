@@ -38,14 +38,17 @@ class BetSettlementRocketMqConsumer implements MessageListener {
             settleBetService.settle(command);
             return ConsumeResult.SUCCESS;
         } catch (JacksonException | IllegalArgumentException | BetNotFoundException e) {
-            log.error("Discarding unprocessable settlement message {}", messageView.getMessageId(), e);
+            log.error(
+                    "Discarding unprocessable settlement message {}",
+                    messageView.getMessageId(),
+                    e);
             return ConsumeResult.SUCCESS;
         } catch (RuntimeException e) {
             log.warn(
-                "Settlement message {} failed on delivery attempt {}, it will be redelivered",
-                messageView.getMessageId(),
-                messageView.getDeliveryAttempt(),
-                e);
+                    "Settlement message {} failed on delivery attempt {}, it will be redelivered",
+                    messageView.getMessageId(),
+                    messageView.getDeliveryAttempt(),
+                    e);
             return ConsumeResult.FAILURE;
         }
     }
