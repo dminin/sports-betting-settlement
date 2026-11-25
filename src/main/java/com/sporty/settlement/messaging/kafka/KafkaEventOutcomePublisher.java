@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ExecutionException;
 
-/** Sends event outcomes to Kafka and reports broker failures to the service layer. */
 @Component
 public class KafkaEventOutcomePublisher {
 

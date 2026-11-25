@@ -20,10 +20,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Real RocketMQ wiring through the gRPC proxy. Replaced by an in-process publisher in the {@code
- * mock} profile.
- */
 @Slf4j
 @Configuration(proxyBeanMethods = false)
 @Profile("!mock")

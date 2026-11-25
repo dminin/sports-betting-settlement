@@ -61,6 +61,7 @@ services:
       retries: 30
 
   # One-shot job: the gRPC client cannot auto-create topics through the proxy.
+  # It creates the bet-settlements topic and then exits.
   rocketmq-init:
     image: apache/rocketmq:5.5.0
     container_name: rocketmq-init

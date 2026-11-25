@@ -4,12 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-/** Starts the bet settlement service. */
 @SpringBootApplication
 @ConfigurationPropertiesScan
 public class BetSettlementApplication {
 
-    /** Runs the Spring Boot application. */
     public static void main(String[] args) {
         SpringApplication.run(BetSettlementApplication.class, args);
     }

@@ -43,7 +43,6 @@ public final class Bet {
         this.version = version;
     }
 
-    /** Creates a new pending bet from a user's validated stake details. */
     public static Bet place(
             String userId,
             String eventId,
@@ -130,32 +129,26 @@ public final class Bet {
         return id;
     }
 
-    /** Returns the identifier of the user who placed the bet. */
     public String userId() {
         return userId;
     }
 
-    /** Returns the identifier of the event on which the bet was placed. */
     public String eventId() {
         return eventId;
     }
 
-    /** Returns the identifier of the event market. */
     public String eventMarketId() {
         return eventMarketId;
     }
 
-    /** Returns the participant selected to win. */
     public String eventWinnerId() {
         return eventWinnerId;
     }
 
-    /** Returns the user's stake. */
     public BigDecimal amount() {
         return amount;
     }
 
-    /** Returns the current settlement status. */
     public BetStatus status() {
         return status;
     }

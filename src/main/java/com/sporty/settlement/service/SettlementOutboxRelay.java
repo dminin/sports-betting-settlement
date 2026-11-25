@@ -7,7 +7,8 @@ import com.sporty.settlement.persistence.SettlementOutboxRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,13 +20,17 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-class SettlementOutboxRelay {
+class SettlementOutboxRelay implements SchedulingConfigurer {
 
     private final SettlementOutboxRepository outboxRepository;
     private final BetSettlementPublisher betSettlementPublisher;
     private final OutboxProperties outboxProperties;
 
-    @Scheduled(fixedDelayString = "${app.outbox.poll-interval}")
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar registrar) {
+        registrar.addFixedDelayTask(this::publishPending, outboxProperties.pollInterval());
+    }
+
     void publishPending() {
         for (OutboxEntry entry : outboxRepository.findOldest(outboxProperties.batchSize())) {
             try {

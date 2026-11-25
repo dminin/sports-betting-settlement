@@ -11,10 +11,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import java.time.Duration;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -43,12 +45,29 @@ class SettlementOutboxRelayTest {
                         outboxRepository,
                         betSettlementPublisher,
                         new OutboxProperties(Duration.ofSeconds(1), 10));
+    }
+
+    private void givenTwoRequestsInTheOutbox() {
         given(outboxRepository.findOldest(10))
                 .willReturn(List.of(new OutboxEntry(11L, FIRST), new OutboxEntry(12L, SECOND)));
     }
 
     @Test
+    void schedulesThePublishRunWithTheConfiguredPollInterval() {
+        ScheduledTaskRegistrar registrar = new ScheduledTaskRegistrar();
+
+        relay.configureTasks(registrar);
+
+        assertThat(registrar.getFixedDelayTaskList())
+                .singleElement()
+                .satisfies(task ->
+                        assertThat(task.getIntervalDuration()).isEqualTo(Duration.ofSeconds(1)));
+    }
+
+    @Test
     void publishesEachRequestThenRemovesIt() {
+        givenTwoRequestsInTheOutbox();
+
         relay.publishPending();
 
         InOrder order = inOrder(betSettlementPublisher, outboxRepository);
@@ -60,6 +79,7 @@ class SettlementOutboxRelayTest {
 
     @Test
     void keepsTheFailedRequestAndStopsTheRunWhenPublishFails() {
+        givenTwoRequestsInTheOutbox();
         willThrow(new MessagePublishingException("broker down", new RuntimeException()))
                 .given(betSettlementPublisher)
                 .publish(FIRST);

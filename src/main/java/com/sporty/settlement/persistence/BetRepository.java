@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/** Stores and queries domain bets through the JPA persistence model. */
 @Repository
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class BetRepository {
@@ -24,7 +23,6 @@ public class BetRepository {
         return BetEntityMapper.toDomain(jpaRepository.save(BetEntityMapper.toEntity(bet)));
     }
 
-    /** Finds a bet by its persistent identifier. */
     public Optional<Bet> findById(Long id) {
         return jpaRepository.findById(id).map(BetEntityMapper::toDomain);
     }
