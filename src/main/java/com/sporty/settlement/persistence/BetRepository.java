@@ -29,11 +29,10 @@ public class BetRepository {
         return jpaRepository.findById(id).map(BetEntityMapper::toDomain);
     }
 
-    /** Finds pending bets on one market of an event in identifier order. */
-    public List<Bet> findPending(String eventId, String eventMarketId) {
+    /** Finds pending bets of an event across all markets in identifier order. */
+    public List<Bet> findPending(String eventId) {
         return jpaRepository
-                .findByEventIdAndEventMarketIdAndStatusOrderById(
-                        eventId, eventMarketId, BetStatus.PENDING)
+                .findByEventIdAndStatusOrderById(eventId, BetStatus.PENDING)
                 .stream()
                 .map(BetEntityMapper::toDomain)
                 .toList();

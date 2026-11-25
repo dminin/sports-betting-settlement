@@ -6,7 +6,7 @@ structure, so clean design matters more than features. `README.md` is the human 
 accepted trade-offs.
 
 Flow: `POST /api/event-outcomes` -> Kafka `event-outcomes` -> `MatchBetsService` (pending bets of the outcome's event
-and market, written to the `settlement_outbox` table) -> `SettlementOutboxRelay` -> `BetSettlementPublisher` -> RocketMQ
+across all markets, written to the `settlement_outbox` table) -> `SettlementOutboxRelay` -> `BetSettlementPublisher` -> RocketMQ
 `bet-settlements` -> `SettleBetService` (WON if the bet's `eventWinnerId` equals the outcome winner, else LOST).
 
 ## Commands

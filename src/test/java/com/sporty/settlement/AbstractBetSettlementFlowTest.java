@@ -50,7 +50,7 @@ abstract class AbstractBetSettlementFlowTest {
     }
 
     @Test
-    void publishedOutcomeSettlesPendingBetsOfTheEventMarket() throws Exception {
+    void publishedOutcomeSettlesPendingBetsOfTheEventAcrossMarkets() throws Exception {
         createBet("user-a", "EVT-IT-1", "MKT-1", "TEAM-X");
         createBet("user-b", "EVT-IT-1", "MKT-1", "TEAM-Y");
         createBet("user-c", "EVT-IT-1", "MKT-2", "TEAM-X");
@@ -61,7 +61,7 @@ abstract class AbstractBetSettlementFlowTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
-                                        {"eventId":"EVT-IT-1","eventMarketId":"MKT-1","eventName":"X vs Y",
+                                        {"eventId":"EVT-IT-1","eventName":"X vs Y",
                                          "eventWinnerId":"TEAM-X"}\
                                         """))
                 .andExpect(status().isAccepted());
@@ -73,9 +73,9 @@ abstract class AbstractBetSettlementFlowTest {
                     assertThat(betsByUser.get("user-a").settledAt()).isNotNull();
                     assertThat(betsByUser.get("user-b").status()).isEqualTo(BetStatus.LOST);
                     assertThat(betsByUser.get("user-b").settledAt()).isNotNull();
+                    assertThat(betsByUser.get("user-c").status()).isEqualTo(BetStatus.WON);
+                    assertThat(betsByUser.get("user-c").settledAt()).isNotNull();
                 });
-        assertThat(byUser(betService.find("EVT-IT-1", null)).get("user-c").status())
-                .isEqualTo(BetStatus.PENDING);
         assertThat(betService.find("EVT-IT-2", null))
                 .singleElement()
                 .extracting(Bet::status)

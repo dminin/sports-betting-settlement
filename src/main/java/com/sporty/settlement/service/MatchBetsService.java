@@ -25,21 +25,20 @@ public class MatchBetsService {
     private final SettlementOutboxRepository outboxRepository;
 
     /**
-     * Stores one settlement request in the outbox for each pending bet on the outcome's event and
-     * market. {@link SettlementOutboxRelay} publishes the requests later. A repeated outcome can
+     * Stores one settlement request in the outbox for each pending bet on the outcome's event.
+     * {@link SettlementOutboxRelay} publishes the requests later. A repeated outcome can
      * store a second request for a bet that is not settled yet; settlement is idempotent.
      */
     @Transactional
     public void requestSettlements(EventOutcome outcome) {
         List<BetSettlementCommand> commands =
-                betRepository.findPending(outcome.eventId(), outcome.eventMarketId()).stream()
+                betRepository.findPending(outcome.eventId()).stream()
                         .map(outcome::settlementCommandFor)
                         .toList();
         outboxRepository.add(commands);
         log.info(
-                "Stored {} settlement requests in the outbox for event {} market {}",
+                "Stored {} settlement requests in the outbox for event {}",
                 commands.size(),
-                outcome.eventId(),
-                outcome.eventMarketId());
+                outcome.eventId());
     }
 }

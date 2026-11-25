@@ -10,13 +10,12 @@ GET {{host}}/api/bets?eventId=EVT-1001
 ### 2. One bet
 GET {{host}}/api/bets/1
 
-### 3. Publish the outcome of the EVT-1001 match winner market: Real Madrid wins. Expect 202 Accepted.
+### 3. Publish the outcome of EVT-1001: Real Madrid wins. Expect 202 Accepted.
 POST {{host}}/api/event-outcomes
 Content-Type: application/json
 
 {
   "eventId": "EVT-1001",
-  "eventMarketId": "MKT-MATCH-WINNER",
   "eventName": "Real Madrid vs Barcelona",
   "eventWinnerId": "TEAM-RMA"
 }
@@ -46,7 +45,6 @@ Content-Type: application/json
 
 {
   "eventId": "EVT-3003",
-  "eventMarketId": "MKT-MATCH-WINNER",
   "eventName": "Team Z vs Team Y",
   "eventWinnerId": "TEAM-Z"
 }
@@ -60,7 +58,6 @@ Content-Type: application/json
 
 {
   "eventId": "EVT-1001",
-  "eventMarketId": "MKT-MATCH-WINNER",
   "eventName": "Real Madrid vs Barcelona"
 }
 

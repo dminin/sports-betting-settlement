@@ -2,10 +2,8 @@
 
 A Spring Boot service that simulates event outcome handling and bet settlement:
 
-For a short interview walkthrough, see [DEMO.md](DEMO.md).
-
-1. `POST /api/event-outcomes` publishes the outcome of one market of an event to the Kafka topic `event-outcomes`.
-2. A Kafka consumer reads the outcome and finds the **pending** bets on that event and market in an in-memory H2
+1. `POST /api/event-outcomes` publishes an event outcome to the Kafka topic `event-outcomes`.
+2. A Kafka consumer reads the outcome and finds the **pending** bets on that event across all markets in an in-memory H2
    database.
 3. In the same database transaction, one settlement request per bet is written to the `settlement_outbox` table.
    A scheduled relay sends each request to the RocketMQ topic `bet-settlements`, then deletes the row.
@@ -108,7 +106,7 @@ curl -s 'localhost:8080/api/bets?eventId=EVT-1001'
 # Publish the outcome: Real Madrid wins
 curl -i -X POST localhost:8080/api/event-outcomes \
   -H 'Content-Type: application/json' \
-  -d '{"eventId":"EVT-1001","eventMarketId":"MKT-MATCH-WINNER","eventName":"Real Madrid vs Barcelona","eventWinnerId":"TEAM-RMA"}'
+  -d '{"eventId":"EVT-1001","eventName":"Real Madrid vs Barcelona","eventWinnerId":"TEAM-RMA"}'
 # -> 202 Accepted
 
 # A moment later: bets 1 and 3 are WON, bet 2 is LOST, each with settledAt
@@ -141,7 +139,7 @@ docker compose down
 
 | Method | Path                  | Description                                                                                                                        |
 |--------|-----------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| POST   | `/api/event-outcomes` | Publish `{eventId, eventMarketId, eventName, eventWinnerId}` to Kafka. `202` on broker ack, `400` on invalid body, `503` if Kafka is unreachable. |
+| POST   | `/api/event-outcomes` | Publish `{eventId, eventName, eventWinnerId}` to Kafka. `202` on broker ack, `400` on invalid body, `503` if Kafka is unreachable. |
 | GET    | `/api/bets`           | List bets, optional filters `eventId` and `status` (`PENDING`, `WON`, `LOST`).                                                     |
 | GET    | `/api/bets/{id}`      | One bet, `404` if unknown.                                                                                                         |
 | POST   | `/api/bets`           | Place a bet `{userId, eventId, eventMarketId, eventWinnerId, amount}`. `201` with `Location`, `400` on invalid body.               |
@@ -194,8 +192,9 @@ one, so switching to the mock is a profile choice.
 
 ### Messages
 
-- `event-outcomes` (Kafka): JSON `{"eventId","eventMarketId","eventName","eventWinnerId"}`, keyed by `eventId`, so all
-  outcomes of one event stay ordered on one partition. The outcome settles only the bets on its `eventMarketId`. The app creates the topic (3 partitions) on startup.
+- `event-outcomes` (Kafka): JSON `{"eventId","eventName","eventWinnerId"}`, keyed by `eventId`, so all
+  outcomes of one event stay ordered on one partition. Matching selects pending bets by `eventId` across all markets.
+  The app creates the topic (3 partitions) on startup.
 - `bet-settlements` (RocketMQ): one message per bet, JSON `{"betId","eventId","outcomeWinnerId"}`, message key =
   `betId`,
   tag `SETTLE`. The message carries the outcome winner, not the result: the consumer settles the bet through
@@ -224,9 +223,9 @@ Both brokers deliver at least once, so every step is idempotent:
 ## Assumptions and trade-offs
 
 - **No payout.** A bet has no odds, so settlement records only `WON`/`LOST` and `settledAt`.
-- **The outcome names one market.** The spec's outcome has no market. This service requires `eventMarketId` on the
-  outcome, so the result of one market (for example match winner) cannot settle bets on another market of the same
-  event. The settlement message does not carry the market: matching already selects the bets of that market.
+- **Event-level outcomes.** As specified, an outcome contains only the event ID, event name and winner ID.
+  Matching uses the event ID, regardless of the bet's market. `eventMarketId` remains part of each bet, but
+  market-specific results are outside this assignment.
 - **Polling outbox relay.** The relay polls the table; it does not use change data capture. Delivery is at least
   once, not exactly once. With more than one app instance, two relays can send the same row; settlement idempotency
   makes that safe, and a row lock (`SELECT ... FOR UPDATE SKIP LOCKED`) would remove the duplicate work.

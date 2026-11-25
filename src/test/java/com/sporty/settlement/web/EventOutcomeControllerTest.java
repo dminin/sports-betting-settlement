@@ -26,24 +26,27 @@ class EventOutcomeControllerTest {
     @MockitoBean private PublishEventOutcomeService publishEventOutcomeService;
 
     @Test
-    void acceptsValidOutcome() throws Exception {
+    void acceptsOutcomeWithOnlyTheThreeRequiredFields() throws Exception {
         mockMvc.perform(
                         post("/api/event-outcomes")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
-                                        {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
+                                        {"eventId":"EVT-1","eventName":"A vs B",
                                          "eventWinnerId":"TEAM-A"}\
                                         """))
                 .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.eventId").value("EVT-1"));
+                .andExpect(jsonPath("$.eventId").value("EVT-1"))
+                .andExpect(jsonPath("$.eventName").value("A vs B"))
+                .andExpect(jsonPath("$.eventWinnerId").value("TEAM-A"))
+                .andExpect(jsonPath("$.eventMarketId").doesNotExist());
 
         verify(publishEventOutcomeService)
-                .publish(new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A"));
+                .publish(new EventOutcome("EVT-1", "A vs B", "TEAM-A"));
     }
 
     @Test
-    void rejectsOutcomeWithMissingMarketAndWinner() throws Exception {
+    void rejectsOutcomeWithMissingWinner() throws Exception {
         mockMvc.perform(
                         post("/api/event-outcomes")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -53,7 +56,7 @@ class EventOutcomeControllerTest {
                                         """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.errors.eventMarketId").exists())
+                .andExpect(jsonPath("$.errors.eventMarketId").doesNotExist())
                 .andExpect(jsonPath("$.errors.eventWinnerId").exists());
 
         verify(publishEventOutcomeService, never()).publish(any());
@@ -70,7 +73,7 @@ class EventOutcomeControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(
                                         """
-                                        {"eventId":"EVT-1","eventMarketId":"MKT-1","eventName":"A vs B",
+                                        {"eventId":"EVT-1","eventName":"A vs B",
                                          "eventWinnerId":"TEAM-A"}\
                                         """))
                 .andExpect(status().isServiceUnavailable());

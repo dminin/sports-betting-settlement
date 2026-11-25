@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 class MatchBetsServiceTest {
 
     private static final EventOutcome OUTCOME =
-            new EventOutcome("EVT-1", "MKT-1", "A vs B", "TEAM-A");
+            new EventOutcome("EVT-1", "A vs B", "TEAM-A");
 
     @Mock private BetRepository betRepository;
 
@@ -30,12 +30,12 @@ class MatchBetsServiceTest {
 
     @InjectMocks private MatchBetsService matchBetsService;
 
-    private static Bet pendingBet(Long id) {
+    private static Bet pendingBet(Long id, String marketId) {
         return Bet.restore(
                 id,
                 "user-" + id,
                 "EVT-1",
-                "MKT-1",
+                marketId,
                 "TEAM-B",
                 new BigDecimal("5.00"),
                 BetStatus.PENDING,
@@ -44,9 +44,9 @@ class MatchBetsServiceTest {
     }
 
     @Test
-    void storesOneSettlementRequestPerPendingBetInTheOutbox() {
-        given(betRepository.findPending("EVT-1", "MKT-1"))
-                .willReturn(List.of(pendingBet(1L), pendingBet(2L)));
+    void storesOneSettlementRequestPerPendingBetAcrossMarketsInTheOutbox() {
+        given(betRepository.findPending("EVT-1"))
+                .willReturn(List.of(pendingBet(1L, "MKT-1"), pendingBet(2L, "MKT-2")));
 
         matchBetsService.requestSettlements(OUTCOME);
 
@@ -59,7 +59,7 @@ class MatchBetsServiceTest {
 
     @Test
     void storesNoRequestWhenNoBetIsPending() {
-        given(betRepository.findPending("EVT-1", "MKT-1")).willReturn(List.of());
+        given(betRepository.findPending("EVT-1")).willReturn(List.of());
 
         matchBetsService.requestSettlements(OUTCOME);
 
