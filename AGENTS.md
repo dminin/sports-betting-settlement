@@ -6,7 +6,7 @@ structure, so clean design matters more than features. `README.md` is the human 
 accepted trade-offs.
 
 Flow: `POST /api/event-outcomes` -> Kafka `event-outcomes` -> `MatchBetsService` (pending bets of the outcome's event
-across all markets, written to the `settlement_outbox` table) -> `SettlementOutboxRelay` -> `BetSettlementPublisher` -> RocketMQ
+across all markets) -> `BetSettlementPublisher` -> RocketMQ
 `bet-settlements` -> `SettleBetService` (WON if the bet's `eventWinnerId` equals the outcome winner, else LOST).
 
 ## Commands
@@ -52,16 +52,14 @@ Layered packages under `com.sporty.settlement`. The package map is in `README.md
   `messaging/dto` (wire contracts of the topics), `service/dto` (service input). Put the mapping methods on the DTO
   record (`from`, `toDomain`, `toCommand`).
 - The domain `Bet` and `BetJpaEntity` are separate. The JPA types are package-private in `persistence`, and only
-  `BetRepository`, `SettlementOutboxRepository` and `OutboxEntry` are public. Change the bet state only through `Bet.place`, `Bet.restore` and `Bet.settle`.
+  `BetRepository` is public. Change the bet state only through `Bet.place`, `Bet.restore` and `Bet.settle`.
 - Make classes package-private by default. Make a class public only when another package uses it.
 
 ## Invariants
 
 - Both brokers deliver at least once, so every handler must be idempotent. Matching selects only `PENDING` bets.
   Settlement skips settled bets. `@Version` optimistic locking stops concurrent duplicates.
-- `MatchBetsService` reads the pending bets and writes the outbox rows in one transaction, and does no broker I/O.
-  `SettlementOutboxRelay` has no transaction on purpose: no database transaction stays open during broker I/O. It
-  deletes a row only after the send succeeds.
+- `MatchBetsService` has no transaction on purpose: no database transaction stays open during broker I/O.
 - Three places classify errors, and they must agree: `web/GlobalExceptionHandler` (HTTP status), `config/KafkaConfig`
   (exceptions that are not retried) and `messaging/rocketmq/BetSettlementRocketMqConsumer` (acknowledge or redeliver).
   If you add an exception type, decide how each of the three handles it.

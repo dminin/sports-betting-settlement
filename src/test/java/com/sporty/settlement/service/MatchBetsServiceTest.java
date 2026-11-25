@@ -5,7 +5,6 @@ import com.sporty.settlement.domain.BetSettlementCommand;
 import com.sporty.settlement.domain.BetStatus;
 import com.sporty.settlement.domain.EventOutcome;
 import com.sporty.settlement.persistence.BetRepository;
-import com.sporty.settlement.persistence.SettlementOutboxRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +16,7 @@ import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class MatchBetsServiceTest {
@@ -26,7 +26,7 @@ class MatchBetsServiceTest {
 
     @Mock private BetRepository betRepository;
 
-    @Mock private SettlementOutboxRepository outboxRepository;
+    @Mock private BetSettlementPublisher betSettlementPublisher;
 
     @InjectMocks private MatchBetsService matchBetsService;
 
@@ -44,25 +44,22 @@ class MatchBetsServiceTest {
     }
 
     @Test
-    void storesOneSettlementRequestPerPendingBetAcrossMarketsInTheOutbox() {
+    void publishesOneSettlementRequestPerPendingBetAcrossMarkets() {
         given(betRepository.findPending("EVT-1"))
                 .willReturn(List.of(pendingBet(1L, "MKT-1"), pendingBet(2L, "MKT-2")));
 
         matchBetsService.requestSettlements(OUTCOME);
 
-        verify(outboxRepository)
-                .add(
-                        List.of(
-                                new BetSettlementCommand(1L, "EVT-1", "TEAM-A"),
-                                new BetSettlementCommand(2L, "EVT-1", "TEAM-A")));
+        verify(betSettlementPublisher).publish(new BetSettlementCommand(1L, "EVT-1", "TEAM-A"));
+        verify(betSettlementPublisher).publish(new BetSettlementCommand(2L, "EVT-1", "TEAM-A"));
     }
 
     @Test
-    void storesNoRequestWhenNoBetIsPending() {
+    void publishesNothingWhenNoBetIsPending() {
         given(betRepository.findPending("EVT-1")).willReturn(List.of());
 
         matchBetsService.requestSettlements(OUTCOME);
 
-        verify(outboxRepository).add(List.of());
+        verifyNoInteractions(betSettlementPublisher);
     }
 }
